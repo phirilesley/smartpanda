@@ -1,0 +1,101 @@
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using SmartSchool.API.Security;
+using SmartSchool.Domain.Modules.Platform;
+using SmartSchool.Persistence.Data;
+
+namespace SmartSchool.API.Controllers.Phase1;
+
+[ApiController]
+[Route("api/platform/schools")]
+[Authorize(Policy = PolicyNames.SchoolsManage)]
+public class SchoolsController(SmartSchoolDbContext dbContext) : ControllerBase
+{
+    [HttpGet]
+    public async Task<ActionResult<IReadOnlyList<School>>> GetAll([FromQuery] Guid tenantId, CancellationToken cancellationToken)
+    {
+        if (tenantId == Guid.Empty)
+        {
+            return BadRequest("tenantId is required.");
+        }
+
+        if (!User.CanAccessTenant(tenantId))
+        {
+            return Forbid();
+        }
+
+        var items = await dbContext.Schools
+            .AsNoTracking()
+            .Where(x => x.TenantId == tenantId)
+            .OrderBy(x => x.Name)
+            .ToListAsync(cancellationToken);
+
+        return Ok(items);
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<School>> Create([FromBody] CreateSchoolRequest request, CancellationToken cancellationToken)
+    {
+        if (!User.CanAccessTenant(request.TenantId))
+        {
+            return Forbid();
+        }
+
+        var tenantExists = await dbContext.Tenants.AsNoTracking().AnyAsync(x => x.Id == request.TenantId, cancellationToken);
+        if (!tenantExists)
+        {
+            return BadRequest("Tenant does not exist.");
+        }
+
+        var codeExists = await dbContext.Schools.AsNoTracking().AnyAsync(x =>
+            x.TenantId == request.TenantId && x.Code == request.Code.Trim().ToUpperInvariant(),
+            cancellationToken);
+
+        if (codeExists)
+        {
+            return Conflict("School code already exists for tenant.");
+        }
+
+        var school = new School
+        {
+            TenantId = request.TenantId,
+            Name = request.Name.Trim(),
+            Code = request.Code.Trim().ToUpperInvariant(),
+            Email = request.Email.Trim(),
+            Phone = request.Phone.Trim(),
+            Address = request.Address.Trim(),
+            IsActive = true
+        };
+
+        dbContext.Schools.Add(school);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return CreatedAtAction(nameof(GetById), new { id = school.Id }, school);
+    }
+
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<School>> GetById(Guid id, CancellationToken cancellationToken)
+    {
+        var school = await dbContext.Schools.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (school is null)
+        {
+            return NotFound();
+        }
+
+        if (!User.CanAccessTenant(school.TenantId))
+        {
+            return Forbid();
+        }
+
+        return Ok(school);
+    }
+}
+
+public sealed record CreateSchoolRequest(
+    Guid TenantId,
+    string Name,
+    string Code,
+    string Email,
+    string Phone,
+    string Address);

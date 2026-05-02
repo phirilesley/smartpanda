@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/backend/" />
+  <Folder Name="/backend/src/">
+    <Project Path="backend/src/SmartSchool.API/SmartSchool.API.csproj" />
+    <Project Path="backend/src/SmartSchool.Application/SmartSchool.Application.csproj" />
+    <Project Path="backend/src/SmartSchool.Domain/SmartSchool.Domain.csproj" />
+    <Project Path="backend/src/SmartSchool.Infrastructure/SmartSchool.Infrastructure.csproj" />
+    <Project Path="backend/src/SmartSchool.Persistence/SmartSchool.Persistence.csproj" />
+  </Folder>
+</Solution>
