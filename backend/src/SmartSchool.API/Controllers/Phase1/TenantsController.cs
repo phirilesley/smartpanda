@@ -17,6 +17,7 @@ public class TenantsController(SmartSchoolDbContext dbContext) : ControllerBase
     {
         var items = await dbContext.Tenants
             .AsNoTracking()
+            .Where(x => !x.IsDeleted)
             .OrderBy(x => x.Name)
             .ToListAsync(cancellationToken);
 
@@ -51,9 +52,56 @@ public class TenantsController(SmartSchoolDbContext dbContext) : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<Tenant>> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var tenant = await dbContext.Tenants.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        var tenant = await dbContext.Tenants.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken);
         return tenant is null ? NotFound() : Ok(tenant);
+    }
+
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<Tenant>> Update(Guid id, [FromBody] UpdateTenantRequest request, CancellationToken cancellationToken)
+    {
+        var tenant = await dbContext.Tenants.FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken);
+        if (tenant is null)
+        {
+            return NotFound();
+        }
+
+        var code = request.Code.Trim().ToUpperInvariant();
+        var duplicate = await dbContext.Tenants.AnyAsync(
+            x => x.Id != id && !x.IsDeleted && x.Code == code,
+            cancellationToken);
+        if (duplicate)
+        {
+            return Conflict("Tenant code already exists.");
+        }
+
+        tenant.Name = request.Name.Trim();
+        tenant.Code = code;
+        tenant.ContactEmail = request.ContactEmail.Trim();
+        tenant.ContactPhone = request.ContactPhone.Trim();
+        tenant.IsActive = request.IsActive;
+        tenant.UpdatedAtUtc = DateTime.UtcNow;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return Ok(tenant);
+    }
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        var tenant = await dbContext.Tenants.FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken);
+        if (tenant is null)
+        {
+            return NotFound();
+        }
+
+        tenant.IsDeleted = true;
+        tenant.DeletedAtUtc = DateTime.UtcNow;
+        tenant.UpdatedAtUtc = DateTime.UtcNow;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return NoContent();
     }
 }
 
 public sealed record CreateTenantRequest(string Name, string Code, string ContactEmail, string ContactPhone);
+public sealed record UpdateTenantRequest(string Name, string Code, string ContactEmail, string ContactPhone, bool IsActive);

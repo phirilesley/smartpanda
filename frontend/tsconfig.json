@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": false,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx"
+  },
+  "include": [
+    "src/index.tsx",
+    "src/App.tsx",
+    "src/index.css",
+    "src/components/**/*",
+    "src/contexts/**/*",
+    "src/hooks/**/*",
+    "src/pages/Auth/**/*",
+    "src/pages/AI/AIAnalytics.tsx",
+    "src/pages/Dashboard/ExecutiveDashboard.tsx",
+    "src/pages/Mobile/**/*",
+    "src/pages/Modules/**/*",
+    "src/pages/NotFound.tsx"
+  ]
+}

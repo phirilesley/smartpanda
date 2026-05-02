@@ -3,6 +3,12 @@
   <ItemGroup>
     <ProjectReference Include="..\SmartSchool.Application\SmartSchool.Application.csproj" />
     <ProjectReference Include="..\SmartSchool.Domain\SmartSchool.Domain.csproj" />
+    <ProjectReference Include="..\SmartSchool.Persistence\SmartSchool.Persistence.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Caching\**\*.cs" />
+    <Compile Remove="Modules\Analytics\**\*.cs" />
   </ItemGroup>
 
   <PropertyGroup>

@@ -11,75 +11,109 @@ namespace SmartSchool.API.Controllers.Phase1;
 [Route("api/academics/terms")]
 [Authorize(Policy = PolicyNames.AcademicsManage)]
 [Authorize(Policy = PolicyNames.SchoolAccess)]
-public class TermsController(SmartSchoolDbContext dbContext) : ControllerBase
+public class TermsController(SmartSchoolDbContext dbContext, ILogger<TermsController> logger) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<Term>>> GetAll([FromQuery] Guid tenantId, [FromQuery] Guid schoolId, [FromQuery] Guid academicYearId, CancellationToken cancellationToken)
     {
+        logger.LogInformation("Getting terms for tenant {TenantId}, school {SchoolId}, academic year {AcademicYearId}", tenantId, schoolId, academicYearId);
+
         if (tenantId == Guid.Empty || schoolId == Guid.Empty || academicYearId == Guid.Empty)
         {
+            logger.LogWarning("Invalid parameters: tenantId={TenantId}, schoolId={SchoolId}, academicYearId={AcademicYearId}", tenantId, schoolId, academicYearId);
             return BadRequest("tenantId, schoolId and academicYearId are required.");
         }
 
         if (!User.CanAccessTenant(tenantId))
         {
+            logger.LogWarning("User {UserId} denied access to tenant {TenantId}", User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, tenantId);
             return Forbid();
         }
 
-        var items = await dbContext.Terms.AsNoTracking()
-            .Where(x => x.TenantId == tenantId && x.SchoolId == schoolId && x.AcademicYearId == academicYearId)
-            .OrderBy(x => x.TermNumber)
-            .ToListAsync(cancellationToken);
+        try
+        {
+            var items = await dbContext.Terms.AsNoTracking()
+                .Where(x => x.TenantId == tenantId && x.SchoolId == schoolId && x.AcademicYearId == academicYearId)
+                .OrderBy(x => x.TermNumber)
+                .ToListAsync(cancellationToken);
 
-        return Ok(items);
+            logger.LogInformation("Retrieved {Count} terms for tenant {TenantId}, school {SchoolId}", items.Count, tenantId, schoolId);
+            return Ok(items);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error retrieving terms for tenant {TenantId}, school {SchoolId}, academic year {AcademicYearId}", tenantId, schoolId, academicYearId);
+            throw;
+        }
     }
 
     [HttpPost]
     public async Task<ActionResult<Term>> Create([FromBody] CreateTermRequest request, CancellationToken cancellationToken)
     {
+        logger.LogInformation("Creating term {TermName} for tenant {TenantId}, school {SchoolId}, academic year {AcademicYearId}", 
+            request.Name, request.TenantId, request.SchoolId, request.AcademicYearId);
+
         if (!User.CanAccessTenant(request.TenantId))
         {
+            logger.LogWarning("User {UserId} denied access to tenant {TenantId} for term creation", 
+                User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, request.TenantId);
             return Forbid();
         }
 
-        var yearExists = await dbContext.AcademicYears.AsNoTracking().AnyAsync(x =>
-            x.Id == request.AcademicYearId && x.TenantId == request.TenantId && x.SchoolId == request.SchoolId,
-            cancellationToken);
-
-        if (!yearExists)
+        try
         {
-            return BadRequest("Academic year does not exist for tenant/school.");
+            var yearExists = await dbContext.AcademicYears.AsNoTracking().AnyAsync(x =>
+                x.Id == request.AcademicYearId && x.TenantId == request.TenantId && x.SchoolId == request.SchoolId,
+                cancellationToken);
+
+            if (!yearExists)
+            {
+                logger.LogWarning("Academic year {AcademicYearId} not found for tenant {TenantId}, school {SchoolId}", 
+                    request.AcademicYearId, request.TenantId, request.SchoolId);
+                return BadRequest("Academic year does not exist for tenant/school.");
+            }
+
+            var exists = await dbContext.Terms.AsNoTracking().AnyAsync(x =>
+                x.TenantId == request.TenantId &&
+                x.SchoolId == request.SchoolId &&
+                x.AcademicYearId == request.AcademicYearId &&
+                x.TermNumber == request.TermNumber,
+                cancellationToken);
+
+            if (exists)
+            {
+                logger.LogWarning("Term number {TermNumber} already exists for academic year {AcademicYearId}", 
+                    request.TermNumber, request.AcademicYearId);
+                return Conflict("Term number already exists for this academic year.");
+            }
+
+            var term = new Term
+            {
+                TenantId = request.TenantId,
+                SchoolId = request.SchoolId,
+                AcademicYearId = request.AcademicYearId,
+                Name = request.Name.Trim(),
+                TermNumber = request.TermNumber,
+                StartDate = request.StartDate,
+                EndDate = request.EndDate,
+                IsActive = true,
+                IsClosed = false
+            };
+
+            dbContext.Terms.Add(term);
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            logger.LogInformation("Successfully created term {TermId} ({TermName}) for tenant {TenantId}", 
+                term.Id, term.Name, term.TenantId);
+
+            return CreatedAtAction(nameof(GetById), new { id = term.Id }, term);
         }
-
-        var exists = await dbContext.Terms.AsNoTracking().AnyAsync(x =>
-            x.TenantId == request.TenantId &&
-            x.SchoolId == request.SchoolId &&
-            x.AcademicYearId == request.AcademicYearId &&
-            x.TermNumber == request.TermNumber,
-            cancellationToken);
-
-        if (exists)
+        catch (Exception ex)
         {
-            return Conflict("Term number already exists for this academic year.");
+            logger.LogError(ex, "Error creating term {TermName} for tenant {TenantId}, school {SchoolId}", 
+                request.Name, request.TenantId, request.SchoolId);
+            throw;
         }
-
-        var term = new Term
-        {
-            TenantId = request.TenantId,
-            SchoolId = request.SchoolId,
-            AcademicYearId = request.AcademicYearId,
-            Name = request.Name.Trim(),
-            TermNumber = request.TermNumber,
-            StartDate = request.StartDate,
-            EndDate = request.EndDate,
-            IsActive = true,
-            IsClosed = false
-        };
-
-        dbContext.Terms.Add(term);
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        return CreatedAtAction(nameof(GetById), new { id = term.Id }, term);
     }
 
     [HttpGet("{id:guid}")]

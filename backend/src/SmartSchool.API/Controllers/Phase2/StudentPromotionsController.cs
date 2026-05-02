@@ -95,6 +95,46 @@ public class StudentPromotionsController(SmartSchoolDbContext dbContext) : Contr
 
         return Ok(promotion);
     }
+
+    [HttpGet]
+    public async Task<ActionResult<IReadOnlyList<StudentPromotion>>> GetByStudent([FromQuery] Guid tenantId, [FromQuery] Guid schoolId, [FromQuery] Guid studentId, CancellationToken cancellationToken)
+    {
+        if (tenantId == Guid.Empty || schoolId == Guid.Empty || studentId == Guid.Empty)
+        {
+            return BadRequest("tenantId, schoolId, and studentId are required.");
+        }
+
+        if (!User.CanAccessTenant(tenantId))
+        {
+            return Forbid();
+        }
+
+        var items = await dbContext.StudentPromotions.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.SchoolId == schoolId && x.StudentId == studentId)
+            .OrderByDescending(x => x.PromotionDate)
+            .ToListAsync(cancellationToken);
+
+        return Ok(items);
+    }
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        var promotion = await dbContext.StudentPromotions.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (promotion is null)
+        {
+            return NotFound();
+        }
+
+        if (!User.CanAccessTenant(promotion.TenantId))
+        {
+            return Forbid();
+        }
+
+        dbContext.StudentPromotions.Remove(promotion);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return NoContent();
+    }
 }
 
 public sealed record CreateStudentPromotionRequest(

@@ -1,6 +1,6 @@
 ﻿# Delivery Phases (Enterprise Matrix)
 
-This file maps all 41 modules to delivery phases.
+This file maps all 46 modules to delivery phases.
 
 ## Phase 1 - Foundation
 - 1. Platform & Subscription Management
@@ -53,9 +53,20 @@ This file maps all 41 modules to delivery phases.
 - 25. Sports Management
 - 26. Timetable Management
 - 32. Integrations (Paynow, Stripe, email, SMS)
+- 42. Events Management
+- 43. Transport Management
+- 44. Hostel Management
+- 45. Health Management
+- 46. Clinic Management
 
 ## Phase 7 - Platform Optimization (Conditional)
 - 37. API Gateway Layer (if needed internally)
+
+### Phase 7 Hardening Started
+- API versioning enabled (`X-API-Version` / `api-version`, default `1.0`).
+- Rate limiting enabled (global partition + named sensitive-write policy).
+- Tenant feature flags implemented (`TenantFeatureFlags` + `/api/feature-flags`).
+- Integration secret protection/rotation implemented for integration settings.
 
 ## Notes
 - Zimbabwe academic lifecycle uses a strict 3-term year model.

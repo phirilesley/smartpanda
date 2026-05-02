@@ -134,6 +134,54 @@ public class SystemSettingsController(SmartSchoolDbContext dbContext) : Controll
 
         return Ok(existing);
     }
+
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<SchoolSetting>> GetSetting(Guid id, CancellationToken cancellationToken)
+    {
+        var setting = await dbContext.SchoolSettings.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (setting is null) return NotFound();
+
+        if (!User.CanAccessTenant(setting.TenantId)) return Forbid();
+
+        return Ok(setting);
+    }
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> DeleteSetting(Guid id, CancellationToken cancellationToken)
+    {
+        var setting = await dbContext.SchoolSettings.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (setting is null) return NotFound();
+
+        if (!User.CanAccessTenant(setting.TenantId)) return Forbid();
+
+        dbContext.SchoolSettings.Remove(setting);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return NoContent();
+    }
+
+    [HttpGet("master-data/{id:guid}")]
+    public async Task<ActionResult<MasterDataItem>> GetMasterDataItem(Guid id, CancellationToken cancellationToken)
+    {
+        var item = await dbContext.MasterDataItems.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (item is null) return NotFound();
+
+        if (!User.CanAccessTenant(item.TenantId)) return Forbid();
+
+        return Ok(item);
+    }
+
+    [HttpDelete("master-data/{id:guid}")]
+    public async Task<IActionResult> DeleteMasterDataItem(Guid id, CancellationToken cancellationToken)
+    {
+        var item = await dbContext.MasterDataItems.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (item is null) return NotFound();
+
+        if (!User.CanAccessTenant(item.TenantId)) return Forbid();
+
+        dbContext.MasterDataItems.Remove(item);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return NoContent();
+    }
 }
 
 public sealed record UpsertSchoolSettingRequest(Guid TenantId, Guid SchoolId, string Category, string SettingKey, string SettingValue, bool IsSensitive);

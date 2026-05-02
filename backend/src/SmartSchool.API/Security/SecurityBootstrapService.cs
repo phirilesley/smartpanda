@@ -5,17 +5,28 @@ using SmartSchool.Persistence.Data;
 
 namespace SmartSchool.API.Security;
 
-public class SecurityBootstrapService(RoleManager<AppRole> roleManager, SmartSchoolDbContext dbContext)
+public class SecurityBootstrapService(RoleManager<AppRole> roleManager, SmartSchoolDbContext dbContext, ILogger<SecurityBootstrapService> logger)
 {
     public async Task EnsureTenantSecuritySeedAsync(Guid tenantId, CancellationToken cancellationToken)
     {
-        var permissions = new[]
+        logger.LogInformation("Ensuring security seed for tenant {TenantId}", tenantId);
+
+        try
+        {
+            var permissions = new[]
         {
             PermissionCodes.PlatformManage,
             PermissionCodes.SchoolsManage,
             PermissionCodes.AcademicsManage,
             PermissionCodes.StudentsManage,
-            PermissionCodes.SecurityManage
+            PermissionCodes.FinanceManage,
+            PermissionCodes.ExamsManage,
+            PermissionCodes.OperationsManage,
+            PermissionCodes.SecurityManage,
+            PermissionCodes.FeatureFlagsManage,
+            PermissionCodes.PortalParentAccess,
+            PermissionCodes.PortalStudentAccess,
+            PermissionCodes.PortalStaffAccess
         };
 
         foreach (var code in permissions)
@@ -30,9 +41,45 @@ public class SecurityBootstrapService(RoleManager<AppRole> roleManager, SmartSch
 
         var roleMap = new Dictionary<string, string[]>
         {
-            [RoleCodes.PlatformOwner] = new[] { PermissionCodes.PlatformManage, PermissionCodes.SchoolsManage, PermissionCodes.AcademicsManage, PermissionCodes.StudentsManage, PermissionCodes.SecurityManage },
-            [RoleCodes.TenantOwner] = new[] { PermissionCodes.SchoolsManage, PermissionCodes.AcademicsManage, PermissionCodes.StudentsManage },
-            [RoleCodes.SchoolAdmin] = new[] { PermissionCodes.AcademicsManage, PermissionCodes.StudentsManage }
+            [RoleCodes.PlatformOwner] =
+            [
+                PermissionCodes.PlatformManage,
+                PermissionCodes.SchoolsManage,
+                PermissionCodes.AcademicsManage,
+                PermissionCodes.StudentsManage,
+                PermissionCodes.FinanceManage,
+                PermissionCodes.ExamsManage,
+                PermissionCodes.OperationsManage,
+                PermissionCodes.SecurityManage,
+                PermissionCodes.FeatureFlagsManage,
+                PermissionCodes.PortalParentAccess,
+                PermissionCodes.PortalStudentAccess,
+                PermissionCodes.PortalStaffAccess
+            ],
+            [RoleCodes.TenantOwner] =
+            [
+                PermissionCodes.SchoolsManage,
+                PermissionCodes.AcademicsManage,
+                PermissionCodes.StudentsManage,
+                PermissionCodes.FinanceManage,
+                PermissionCodes.ExamsManage,
+                PermissionCodes.OperationsManage,
+                PermissionCodes.FeatureFlagsManage,
+                PermissionCodes.PortalParentAccess,
+                PermissionCodes.PortalStudentAccess,
+                PermissionCodes.PortalStaffAccess
+            ],
+            [RoleCodes.SchoolAdmin] =
+            [
+                PermissionCodes.AcademicsManage,
+                PermissionCodes.StudentsManage,
+                PermissionCodes.FinanceManage,
+                PermissionCodes.ExamsManage,
+                PermissionCodes.OperationsManage,
+                PermissionCodes.PortalParentAccess,
+                PermissionCodes.PortalStudentAccess,
+                PermissionCodes.PortalStaffAccess
+            ]
         };
 
         foreach (var (roleName, permissionCodes) in roleMap)
@@ -81,5 +128,12 @@ public class SecurityBootstrapService(RoleManager<AppRole> roleManager, SmartSch
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        logger.LogInformation("Successfully completed security seed for tenant {TenantId}", tenantId);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error during security seed for tenant {TenantId}", tenantId);
+            throw;
+        }
     }
 }

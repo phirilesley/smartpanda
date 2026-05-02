@@ -7,7 +7,9 @@ using SmartSchool.Domain.Modules.Communication;
 using SmartSchool.Domain.Modules.Exams;
 using SmartSchool.Domain.Modules.Files;
 using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Health;
 using SmartSchool.Domain.Modules.HelpDesk;
+using SmartSchool.Domain.Modules.Hostels;
 using SmartSchool.Domain.Modules.HR;
 using SmartSchool.Domain.Modules.Integrations;
 using SmartSchool.Domain.Modules.Labs;
@@ -24,7 +26,9 @@ using SmartSchool.Domain.Modules.Settings;
 using SmartSchool.Domain.Modules.Sports;
 using SmartSchool.Domain.Modules.Students;
 using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Transport;
 using SmartSchool.Domain.Modules.Visitors;
+using SmartSchool.Domain.Modules.Events;
 
 namespace SmartSchool.Persistence.Data;
 
@@ -139,6 +143,31 @@ public class SmartSchoolDbContext(DbContextOptions<SmartSchoolDbContext> options
     public DbSet<TimetablePeriod> TimetablePeriods => Set<TimetablePeriod>();
     public DbSet<TimetableEntry> TimetableEntries => Set<TimetableEntry>();
 
+    public DbSet<SchoolEvent> SchoolEvents => Set<SchoolEvent>();
+    public DbSet<EventParticipant> EventParticipants => Set<EventParticipant>();
+
+    public DbSet<TransportVehicle> TransportVehicles => Set<TransportVehicle>();
+    public DbSet<TransportRoute> TransportRoutes => Set<TransportRoute>();
+    public DbSet<TransportRouteStop> TransportRouteStops => Set<TransportRouteStop>();
+    public DbSet<TransportStudentAssignment> TransportStudentAssignments => Set<TransportStudentAssignment>();
+    public DbSet<TransportTrip> TransportTrips => Set<TransportTrip>();
+
+    public DbSet<Hostel> Hostels => Set<Hostel>();
+    public DbSet<HostelRoom> HostelRooms => Set<HostelRoom>();
+    public DbSet<HostelBed> HostelBeds => Set<HostelBed>();
+    public DbSet<HostelAllocation> HostelAllocations => Set<HostelAllocation>();
+    public DbSet<HostelIncident> HostelIncidents => Set<HostelIncident>();
+
+    public DbSet<HealthProfile> HealthProfiles => Set<HealthProfile>();
+    public DbSet<HealthScreening> HealthScreenings => Set<HealthScreening>();
+    public DbSet<ImmunizationRecord> ImmunizationRecords => Set<ImmunizationRecord>();
+    public DbSet<HealthActionPlan> HealthActionPlans => Set<HealthActionPlan>();
+    public DbSet<ClinicVisit> ClinicVisits => Set<ClinicVisit>();
+    public DbSet<ClinicMedication> ClinicMedications => Set<ClinicMedication>();
+    public DbSet<MedicationDispense> MedicationDispenses => Set<MedicationDispense>();
+    public DbSet<ClinicPrescription> ClinicPrescriptions => Set<ClinicPrescription>();
+    public DbSet<ClinicPrescriptionItem> ClinicPrescriptionItems => Set<ClinicPrescriptionItem>();
+
     public DbSet<Announcement> Announcements => Set<Announcement>();
     public DbSet<MessageThread> MessageThreads => Set<MessageThread>();
     public DbSet<MessageParticipant> MessageParticipants => Set<MessageParticipant>();
@@ -162,6 +191,7 @@ public class SmartSchoolDbContext(DbContextOptions<SmartSchoolDbContext> options
     public DbSet<PortalQuickLink> PortalQuickLinks => Set<PortalQuickLink>();
     public DbSet<SchoolSetting> SchoolSettings => Set<SchoolSetting>();
     public DbSet<MasterDataItem> MasterDataItems => Set<MasterDataItem>();
+    public DbSet<TenantFeatureFlag> TenantFeatureFlags => Set<TenantFeatureFlag>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -189,6 +219,69 @@ public class SmartSchoolDbContext(DbContextOptions<SmartSchoolDbContext> options
         modelBuilder.Entity<RefreshToken>().HasIndex(x => new { x.TenantId, x.UserId, x.TokenHash }).IsUnique();
         modelBuilder.Entity<SchoolSetting>().HasIndex(x => new { x.TenantId, x.SchoolId, x.SettingKey }).IsUnique();
         modelBuilder.Entity<MasterDataItem>().HasIndex(x => new { x.TenantId, x.SchoolId, x.DataType, x.Code }).IsUnique();
+        modelBuilder.Entity<TenantFeatureFlag>().HasIndex(x => new { x.TenantId, x.FeatureCode }).IsUnique();
+        modelBuilder.Entity<FeeCategory>().HasIndex(x => new { x.TenantId, x.SchoolId, x.Name }).IsUnique();
+        modelBuilder.Entity<FeeStructure>().HasIndex(x => new { x.TenantId, x.SchoolId, x.AcademicYearId, x.TermId, x.GradeId, x.FeeCategoryId, x.Currency }).IsUnique();
+        modelBuilder.Entity<StudentInvoice>().HasIndex(x => new { x.TenantId, x.SchoolId, x.InvoiceNumber }).IsUnique();
+        modelBuilder.Entity<Receipt>().HasIndex(x => new { x.TenantId, x.SchoolId, x.ReceiptNumber }).IsUnique();
+        modelBuilder.Entity<PaymentPlan>().HasIndex(x => new { x.TenantId, x.SchoolId, x.InvoiceId, x.StudentId });
+        modelBuilder.Entity<ExamType>().HasIndex(x => new { x.TenantId, x.SchoolId, x.Name }).IsUnique();
+        modelBuilder.Entity<ExamSession>().HasIndex(x => new { x.TenantId, x.SchoolId, x.AcademicYearId, x.TermId, x.GradeId, x.Name }).IsUnique();
+        modelBuilder.Entity<StudentMark>().HasIndex(x => new { x.TenantId, x.SchoolId, x.EnrollmentId, x.ExamSessionId, x.SubjectId }).IsUnique();
+        modelBuilder.Entity<ResultApproval>().HasIndex(x => new { x.TenantId, x.SchoolId, x.ExamSessionId, x.ApprovedByUserId });
+        modelBuilder.Entity<ReportCard>().HasIndex(x => new { x.TenantId, x.SchoolId, x.StudentId, x.AcademicYearId, x.TermId, x.GradeId }).IsUnique();
+        modelBuilder.Entity<AttendanceSession>().HasIndex(x => new { x.TenantId, x.SchoolId, x.AcademicYearId, x.TermId, x.AttendanceDate, x.SessionType }).IsUnique();
+        modelBuilder.Entity<StudentAttendance>().HasIndex(x => new { x.TenantId, x.SchoolId, x.AttendanceSessionId, x.StudentId }).IsUnique();
+        modelBuilder.Entity<StaffAttendance>().HasIndex(x => new { x.TenantId, x.SchoolId, x.AttendanceSessionId, x.StaffId }).IsUnique();
+        modelBuilder.Entity<NotificationTemplate>().HasIndex(x => new { x.TenantId, x.SchoolId, x.Name, x.Channel }).IsUnique();
+        modelBuilder.Entity<ReportDefinition>().HasIndex(x => new { x.TenantId, x.SchoolId, x.QueryKey }).IsUnique();
+        modelBuilder.Entity<StaffMember>().HasIndex(x => new { x.TenantId, x.SchoolId, x.EmployeeNumber }).IsUnique();
+        modelBuilder.Entity<LeaveType>().HasIndex(x => new { x.TenantId, x.SchoolId, x.Name }).IsUnique();
+        modelBuilder.Entity<PayrollPeriod>().HasIndex(x => new { x.TenantId, x.SchoolId, x.Name }).IsUnique();
+        modelBuilder.Entity<BookCategory>().HasIndex(x => new { x.TenantId, x.SchoolId, x.Name }).IsUnique();
+        modelBuilder.Entity<Book>().HasIndex(x => new { x.TenantId, x.SchoolId, x.Isbn });
+        modelBuilder.Entity<BookCopy>().HasIndex(x => new { x.TenantId, x.SchoolId, x.CopyNumber }).IsUnique();
+        modelBuilder.Entity<AssetCategory>().HasIndex(x => new { x.TenantId, x.SchoolId, x.Name }).IsUnique();
+        modelBuilder.Entity<AssetItem>().HasIndex(x => new { x.TenantId, x.SchoolId, x.AssetTag }).IsUnique();
+        modelBuilder.Entity<Visitor>().HasIndex(x => new { x.TenantId, x.SchoolId, x.IdNumber });
+        modelBuilder.Entity<VisitorLog>().HasIndex(x => new { x.TenantId, x.SchoolId, x.BadgeNumber, x.CheckInAtUtc });
+        modelBuilder.Entity<ComputerLab>().HasIndex(x => new { x.TenantId, x.SchoolId, x.Name }).IsUnique();
+        modelBuilder.Entity<LabComputer>().HasIndex(x => new { x.TenantId, x.SchoolId, x.AssetTag }).IsUnique();
+        modelBuilder.Entity<LabBooking>().HasIndex(x => new { x.TenantId, x.SchoolId, x.ComputerLabId, x.StartTimeUtc, x.EndTimeUtc });
+        modelBuilder.Entity<QuestionPaperCategory>().HasIndex(x => new { x.TenantId, x.SchoolId, x.SubjectId, x.GradeId, x.Name }).IsUnique();
+        modelBuilder.Entity<QuestionPaper>().HasIndex(x => new { x.TenantId, x.SchoolId, x.QuestionPaperCategoryId, x.ExamYear, x.ExamType });
+        modelBuilder.Entity<MemoApprover>().HasIndex(x => new { x.TenantId, x.SchoolId, x.MemoRequestId, x.ApproverUserId }).IsUnique();
+        modelBuilder.Entity<PosCategory>().HasIndex(x => new { x.TenantId, x.SchoolId, x.Name }).IsUnique();
+        modelBuilder.Entity<PosProduct>().HasIndex(x => new { x.TenantId, x.SchoolId, x.Sku }).IsUnique();
+        modelBuilder.Entity<PosCashierSession>().HasIndex(x => new { x.TenantId, x.SchoolId, x.CashierUserId, x.ClosedAtUtc });
+        modelBuilder.Entity<PosSale>().HasIndex(x => new { x.TenantId, x.SchoolId, x.ReceiptNumber }).IsUnique();
+        modelBuilder.Entity<Sport>().HasIndex(x => new { x.TenantId, x.SchoolId, x.Name }).IsUnique();
+        modelBuilder.Entity<House>().HasIndex(x => new { x.TenantId, x.SchoolId, x.Name }).IsUnique();
+        modelBuilder.Entity<SportTeam>().HasIndex(x => new { x.TenantId, x.SchoolId, x.SportId, x.Name }).IsUnique();
+        modelBuilder.Entity<SportPlayer>().HasIndex(x => new { x.TenantId, x.SchoolId, x.SportTeamId, x.StudentId }).IsUnique();
+        modelBuilder.Entity<Room>().HasIndex(x => new { x.TenantId, x.SchoolId, x.Name }).IsUnique();
+        modelBuilder.Entity<TimetablePeriod>().HasIndex(x => new { x.TenantId, x.SchoolId, x.DayOfWeek, x.StartTime, x.EndTime }).IsUnique();
+        modelBuilder.Entity<TimetableEntry>().HasIndex(x => new { x.TenantId, x.SchoolId, x.AcademicYearId, x.TermId, x.GradeId, x.StreamId, x.TimetablePeriodId }).IsUnique();
+        modelBuilder.Entity<IntegrationSetting>().HasIndex(x => new { x.TenantId, x.SchoolId, x.IntegrationType, x.ProviderName }).IsUnique();
+        modelBuilder.Entity<PaymentGatewayWebhook>().HasIndex(x => new { x.TenantId, x.SchoolId, x.ProviderName, x.ReceivedAtUtc });
+        modelBuilder.Entity<SchoolEvent>().HasIndex(x => new { x.TenantId, x.SchoolId, x.Venue, x.StartAtUtc, x.EndAtUtc });
+        modelBuilder.Entity<EventParticipant>().HasIndex(x => new { x.TenantId, x.SchoolId, x.SchoolEventId, x.StudentId, x.StaffId, x.GuardianId }).IsUnique();
+        modelBuilder.Entity<TransportVehicle>().HasIndex(x => new { x.TenantId, x.SchoolId, x.RegistrationNumber }).IsUnique();
+        modelBuilder.Entity<TransportRoute>().HasIndex(x => new { x.TenantId, x.SchoolId, x.RouteCode }).IsUnique();
+        modelBuilder.Entity<TransportRouteStop>().HasIndex(x => new { x.TenantId, x.SchoolId, x.TransportRouteId, x.StopOrder }).IsUnique();
+        modelBuilder.Entity<TransportStudentAssignment>().HasIndex(x => new { x.TenantId, x.SchoolId, x.StudentId, x.TransportRouteId, x.Status });
+        modelBuilder.Entity<TransportTrip>().HasIndex(x => new { x.TenantId, x.SchoolId, x.TransportVehicleId, x.TripDate, x.Direction });
+        modelBuilder.Entity<Hostel>().HasIndex(x => new { x.TenantId, x.SchoolId, x.Name }).IsUnique();
+        modelBuilder.Entity<HostelRoom>().HasIndex(x => new { x.TenantId, x.SchoolId, x.HostelId, x.Name }).IsUnique();
+        modelBuilder.Entity<HostelBed>().HasIndex(x => new { x.TenantId, x.SchoolId, x.HostelRoomId, x.BedCode }).IsUnique();
+        modelBuilder.Entity<HostelAllocation>().HasIndex(x => new { x.TenantId, x.SchoolId, x.StudentId, x.IsCurrent }).HasFilter("[IsCurrent] = 1").IsUnique();
+        modelBuilder.Entity<HostelIncident>().HasIndex(x => new { x.TenantId, x.SchoolId, x.HostelId, x.OccurredAtUtc });
+        modelBuilder.Entity<HealthProfile>().HasIndex(x => new { x.TenantId, x.SchoolId, x.StudentId, x.StaffId }).IsUnique();
+        modelBuilder.Entity<HealthScreening>().HasIndex(x => new { x.TenantId, x.SchoolId, x.HealthProfileId, x.ScreeningDateUtc });
+        modelBuilder.Entity<ImmunizationRecord>().HasIndex(x => new { x.TenantId, x.SchoolId, x.HealthProfileId, x.VaccineName, x.DoseNumber }).IsUnique();
+        modelBuilder.Entity<ClinicVisit>().HasIndex(x => new { x.TenantId, x.SchoolId, x.VisitDateUtc, x.PatientType });
+        modelBuilder.Entity<ClinicMedication>().HasIndex(x => new { x.TenantId, x.SchoolId, x.Name }).IsUnique();
+        modelBuilder.Entity<MedicationDispense>().HasIndex(x => new { x.TenantId, x.SchoolId, x.ClinicVisitId, x.ClinicMedicationId, x.CreatedAtUtc });
 
         modelBuilder.Entity<StudentEnrollment>()
             .HasIndex(x => new { x.TenantId, x.SchoolId, x.StudentId, x.IsCurrent })
@@ -201,3 +294,4 @@ public class SmartSchoolDbContext(DbContextOptions<SmartSchoolDbContext> options
         modelBuilder.Entity<FeeStructure>().Property(x => x.Amount).HasPrecision(18, 2);
     }
 }
+

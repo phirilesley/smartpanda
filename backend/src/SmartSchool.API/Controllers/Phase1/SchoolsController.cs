@@ -27,7 +27,7 @@ public class SchoolsController(SmartSchoolDbContext dbContext) : ControllerBase
 
         var items = await dbContext.Schools
             .AsNoTracking()
-            .Where(x => x.TenantId == tenantId)
+            .Where(x => x.TenantId == tenantId && !x.IsDeleted)
             .OrderBy(x => x.Name)
             .ToListAsync(cancellationToken);
 
@@ -77,7 +77,7 @@ public class SchoolsController(SmartSchoolDbContext dbContext) : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<School>> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var school = await dbContext.Schools.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        var school = await dbContext.Schools.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken);
         if (school is null)
         {
             return NotFound();
@@ -90,6 +90,63 @@ public class SchoolsController(SmartSchoolDbContext dbContext) : ControllerBase
 
         return Ok(school);
     }
+
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<School>> Update(Guid id, [FromBody] UpdateSchoolRequest request, CancellationToken cancellationToken)
+    {
+        var school = await dbContext.Schools.FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken);
+        if (school is null)
+        {
+            return NotFound();
+        }
+
+        if (!User.CanAccessTenant(school.TenantId))
+        {
+            return Forbid();
+        }
+
+        var code = request.Code.Trim().ToUpperInvariant();
+        var duplicate = await dbContext.Schools.AnyAsync(
+            x => x.Id != id && !x.IsDeleted && x.TenantId == school.TenantId && x.Code == code,
+            cancellationToken);
+        if (duplicate)
+        {
+            return Conflict("School code already exists for tenant.");
+        }
+
+        school.Name = request.Name.Trim();
+        school.Code = code;
+        school.Email = request.Email.Trim();
+        school.Phone = request.Phone.Trim();
+        school.Address = request.Address.Trim();
+        school.IsActive = request.IsActive;
+        school.UpdatedAtUtc = DateTime.UtcNow;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return Ok(school);
+    }
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        var school = await dbContext.Schools.FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted, cancellationToken);
+        if (school is null)
+        {
+            return NotFound();
+        }
+
+        if (!User.CanAccessTenant(school.TenantId))
+        {
+            return Forbid();
+        }
+
+        school.IsDeleted = true;
+        school.DeletedAtUtc = DateTime.UtcNow;
+        school.UpdatedAtUtc = DateTime.UtcNow;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return NoContent();
+    }
 }
 
 public sealed record CreateSchoolRequest(
@@ -99,3 +156,11 @@ public sealed record CreateSchoolRequest(
     string Email,
     string Phone,
     string Address);
+
+public sealed record UpdateSchoolRequest(
+    string Name,
+    string Code,
+    string Email,
+    string Phone,
+    string Address,
+    bool IsActive);

@@ -81,3 +81,18 @@ public class CreateStudentPromotionRequestValidator : AbstractValidator<CreateSt
         });
     }
 }
+
+public class CreateUploadedFileMetadataRequestValidator : AbstractValidator<CreateUploadedFileMetadataRequest>
+{
+    public CreateUploadedFileMetadataRequestValidator()
+    {
+        RuleFor(x => x.TenantId).NotEmpty();
+        RuleFor(x => x.SchoolId).NotEmpty();
+        RuleFor(x => x.OriginalFileName).NotEmpty().MaximumLength(260);
+        RuleFor(x => x.StoredFileName).NotEmpty().MaximumLength(260);
+        RuleFor(x => x.ContentType).NotEmpty().MaximumLength(120);
+        RuleFor(x => x.SizeBytes).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.StoragePath).NotEmpty().MaximumLength(500);
+        RuleFor(x => x.UploadedByUserId).NotEmpty();
+    }
+}

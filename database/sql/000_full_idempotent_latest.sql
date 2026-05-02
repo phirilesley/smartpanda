@@ -2750,3 +2750,1003 @@ GO
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502031151_Phase3FinanceCore'
+)
+BEGIN
+    DECLARE @var0 sysname;
+    SELECT @var0 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[StudentInvoices]') AND [c].[name] = N'InvoiceNumber');
+    IF @var0 IS NOT NULL EXEC(N'ALTER TABLE [StudentInvoices] DROP CONSTRAINT [' + @var0 + '];');
+    ALTER TABLE [StudentInvoices] ALTER COLUMN [InvoiceNumber] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502031151_Phase3FinanceCore'
+)
+BEGIN
+    DECLARE @var1 sysname;
+    SELECT @var1 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[Receipts]') AND [c].[name] = N'ReceiptNumber');
+    IF @var1 IS NOT NULL EXEC(N'ALTER TABLE [Receipts] DROP CONSTRAINT [' + @var1 + '];');
+    ALTER TABLE [Receipts] ALTER COLUMN [ReceiptNumber] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502031151_Phase3FinanceCore'
+)
+BEGIN
+    DECLARE @var2 sysname;
+    SELECT @var2 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[FeeCategories]') AND [c].[name] = N'Name');
+    IF @var2 IS NOT NULL EXEC(N'ALTER TABLE [FeeCategories] DROP CONSTRAINT [' + @var2 + '];');
+    ALTER TABLE [FeeCategories] ALTER COLUMN [Name] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502031151_Phase3FinanceCore'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_StudentInvoices_TenantId_SchoolId_InvoiceNumber] ON [StudentInvoices] ([TenantId], [SchoolId], [InvoiceNumber]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502031151_Phase3FinanceCore'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_Receipts_TenantId_SchoolId_ReceiptNumber] ON [Receipts] ([TenantId], [SchoolId], [ReceiptNumber]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502031151_Phase3FinanceCore'
+)
+BEGIN
+    CREATE INDEX [IX_PaymentPlans_TenantId_SchoolId_InvoiceId_StudentId] ON [PaymentPlans] ([TenantId], [SchoolId], [InvoiceId], [StudentId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502031151_Phase3FinanceCore'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_FeeStructures_TenantId_SchoolId_AcademicYearId_TermId_GradeId_FeeCategoryId_Currency] ON [FeeStructures] ([TenantId], [SchoolId], [AcademicYearId], [TermId], [GradeId], [FeeCategoryId], [Currency]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502031151_Phase3FinanceCore'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_FeeCategories_TenantId_SchoolId_Name] ON [FeeCategories] ([TenantId], [SchoolId], [Name]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502031151_Phase3FinanceCore'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20260502031151_Phase3FinanceCore', N'8.0.6');
+END;
+GO
+
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502031822_Phase4ExamsResults'
+)
+BEGIN
+    DECLARE @var3 sysname;
+    SELECT @var3 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[ExamTypes]') AND [c].[name] = N'Name');
+    IF @var3 IS NOT NULL EXEC(N'ALTER TABLE [ExamTypes] DROP CONSTRAINT [' + @var3 + '];');
+    ALTER TABLE [ExamTypes] ALTER COLUMN [Name] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502031822_Phase4ExamsResults'
+)
+BEGIN
+    DECLARE @var4 sysname;
+    SELECT @var4 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[ExamSessions]') AND [c].[name] = N'Name');
+    IF @var4 IS NOT NULL EXEC(N'ALTER TABLE [ExamSessions] DROP CONSTRAINT [' + @var4 + '];');
+    ALTER TABLE [ExamSessions] ALTER COLUMN [Name] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502031822_Phase4ExamsResults'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_StudentMarks_TenantId_SchoolId_EnrollmentId_ExamSessionId_SubjectId] ON [StudentMarks] ([TenantId], [SchoolId], [EnrollmentId], [ExamSessionId], [SubjectId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502031822_Phase4ExamsResults'
+)
+BEGIN
+    CREATE INDEX [IX_ResultApprovals_TenantId_SchoolId_ExamSessionId_ApprovedByUserId] ON [ResultApprovals] ([TenantId], [SchoolId], [ExamSessionId], [ApprovedByUserId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502031822_Phase4ExamsResults'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_ReportCards_TenantId_SchoolId_StudentId_AcademicYearId_TermId_GradeId] ON [ReportCards] ([TenantId], [SchoolId], [StudentId], [AcademicYearId], [TermId], [GradeId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502031822_Phase4ExamsResults'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_ExamTypes_TenantId_SchoolId_Name] ON [ExamTypes] ([TenantId], [SchoolId], [Name]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502031822_Phase4ExamsResults'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_ExamSessions_TenantId_SchoolId_AcademicYearId_TermId_GradeId_Name] ON [ExamSessions] ([TenantId], [SchoolId], [AcademicYearId], [TermId], [GradeId], [Name]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502031822_Phase4ExamsResults'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20260502031822_Phase4ExamsResults', N'8.0.6');
+END;
+GO
+
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502033136_Phase5OperationsExpansion'
+)
+BEGIN
+    DECLARE @var5 sysname;
+    SELECT @var5 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[ReportDefinitions]') AND [c].[name] = N'QueryKey');
+    IF @var5 IS NOT NULL EXEC(N'ALTER TABLE [ReportDefinitions] DROP CONSTRAINT [' + @var5 + '];');
+    ALTER TABLE [ReportDefinitions] ALTER COLUMN [QueryKey] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502033136_Phase5OperationsExpansion'
+)
+BEGIN
+    DECLARE @var6 sysname;
+    SELECT @var6 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[NotificationTemplates]') AND [c].[name] = N'Name');
+    IF @var6 IS NOT NULL EXEC(N'ALTER TABLE [NotificationTemplates] DROP CONSTRAINT [' + @var6 + '];');
+    ALTER TABLE [NotificationTemplates] ALTER COLUMN [Name] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502033136_Phase5OperationsExpansion'
+)
+BEGIN
+    DECLARE @var7 sysname;
+    SELECT @var7 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[NotificationTemplates]') AND [c].[name] = N'Channel');
+    IF @var7 IS NOT NULL EXEC(N'ALTER TABLE [NotificationTemplates] DROP CONSTRAINT [' + @var7 + '];');
+    ALTER TABLE [NotificationTemplates] ALTER COLUMN [Channel] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502033136_Phase5OperationsExpansion'
+)
+BEGIN
+    DECLARE @var8 sysname;
+    SELECT @var8 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[AttendanceSessions]') AND [c].[name] = N'SessionType');
+    IF @var8 IS NOT NULL EXEC(N'ALTER TABLE [AttendanceSessions] DROP CONSTRAINT [' + @var8 + '];');
+    ALTER TABLE [AttendanceSessions] ALTER COLUMN [SessionType] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502033136_Phase5OperationsExpansion'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_StudentAttendances_TenantId_SchoolId_AttendanceSessionId_StudentId] ON [StudentAttendances] ([TenantId], [SchoolId], [AttendanceSessionId], [StudentId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502033136_Phase5OperationsExpansion'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_StaffAttendances_TenantId_SchoolId_AttendanceSessionId_StaffId] ON [StaffAttendances] ([TenantId], [SchoolId], [AttendanceSessionId], [StaffId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502033136_Phase5OperationsExpansion'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_ReportDefinitions_TenantId_SchoolId_QueryKey] ON [ReportDefinitions] ([TenantId], [SchoolId], [QueryKey]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502033136_Phase5OperationsExpansion'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_NotificationTemplates_TenantId_SchoolId_Name_Channel] ON [NotificationTemplates] ([TenantId], [SchoolId], [Name], [Channel]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502033136_Phase5OperationsExpansion'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_AttendanceSessions_TenantId_SchoolId_AcademicYearId_TermId_AttendanceDate_SessionType] ON [AttendanceSessions] ([TenantId], [SchoolId], [AcademicYearId], [TermId], [AttendanceDate], [SessionType]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502033136_Phase5OperationsExpansion'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20260502033136_Phase5OperationsExpansion', N'8.0.6');
+END;
+GO
+
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    DECLARE @var9 sysname;
+    SELECT @var9 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[Visitors]') AND [c].[name] = N'IdNumber');
+    IF @var9 IS NOT NULL EXEC(N'ALTER TABLE [Visitors] DROP CONSTRAINT [' + @var9 + '];');
+    ALTER TABLE [Visitors] ALTER COLUMN [IdNumber] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    DECLARE @var10 sysname;
+    SELECT @var10 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[VisitorLogs]') AND [c].[name] = N'BadgeNumber');
+    IF @var10 IS NOT NULL EXEC(N'ALTER TABLE [VisitorLogs] DROP CONSTRAINT [' + @var10 + '];');
+    ALTER TABLE [VisitorLogs] ALTER COLUMN [BadgeNumber] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    DECLARE @var11 sysname;
+    SELECT @var11 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[StaffMembers]') AND [c].[name] = N'EmployeeNumber');
+    IF @var11 IS NOT NULL EXEC(N'ALTER TABLE [StaffMembers] DROP CONSTRAINT [' + @var11 + '];');
+    ALTER TABLE [StaffMembers] ALTER COLUMN [EmployeeNumber] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    DECLARE @var12 sysname;
+    SELECT @var12 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[SportTeams]') AND [c].[name] = N'Name');
+    IF @var12 IS NOT NULL EXEC(N'ALTER TABLE [SportTeams] DROP CONSTRAINT [' + @var12 + '];');
+    ALTER TABLE [SportTeams] ALTER COLUMN [Name] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    DECLARE @var13 sysname;
+    SELECT @var13 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[Sports]') AND [c].[name] = N'Name');
+    IF @var13 IS NOT NULL EXEC(N'ALTER TABLE [Sports] DROP CONSTRAINT [' + @var13 + '];');
+    ALTER TABLE [Sports] ALTER COLUMN [Name] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    DECLARE @var14 sysname;
+    SELECT @var14 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[Rooms]') AND [c].[name] = N'Name');
+    IF @var14 IS NOT NULL EXEC(N'ALTER TABLE [Rooms] DROP CONSTRAINT [' + @var14 + '];');
+    ALTER TABLE [Rooms] ALTER COLUMN [Name] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    DECLARE @var15 sysname;
+    SELECT @var15 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[QuestionPapers]') AND [c].[name] = N'ExamType');
+    IF @var15 IS NOT NULL EXEC(N'ALTER TABLE [QuestionPapers] DROP CONSTRAINT [' + @var15 + '];');
+    ALTER TABLE [QuestionPapers] ALTER COLUMN [ExamType] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    DECLARE @var16 sysname;
+    SELECT @var16 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[QuestionPaperCategories]') AND [c].[name] = N'Name');
+    IF @var16 IS NOT NULL EXEC(N'ALTER TABLE [QuestionPaperCategories] DROP CONSTRAINT [' + @var16 + '];');
+    ALTER TABLE [QuestionPaperCategories] ALTER COLUMN [Name] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    DECLARE @var17 sysname;
+    SELECT @var17 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[PosSales]') AND [c].[name] = N'ReceiptNumber');
+    IF @var17 IS NOT NULL EXEC(N'ALTER TABLE [PosSales] DROP CONSTRAINT [' + @var17 + '];');
+    ALTER TABLE [PosSales] ALTER COLUMN [ReceiptNumber] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    DECLARE @var18 sysname;
+    SELECT @var18 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[PosProducts]') AND [c].[name] = N'Sku');
+    IF @var18 IS NOT NULL EXEC(N'ALTER TABLE [PosProducts] DROP CONSTRAINT [' + @var18 + '];');
+    ALTER TABLE [PosProducts] ALTER COLUMN [Sku] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    DECLARE @var19 sysname;
+    SELECT @var19 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[PosCategories]') AND [c].[name] = N'Name');
+    IF @var19 IS NOT NULL EXEC(N'ALTER TABLE [PosCategories] DROP CONSTRAINT [' + @var19 + '];');
+    ALTER TABLE [PosCategories] ALTER COLUMN [Name] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    DECLARE @var20 sysname;
+    SELECT @var20 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[PayrollPeriods]') AND [c].[name] = N'Name');
+    IF @var20 IS NOT NULL EXEC(N'ALTER TABLE [PayrollPeriods] DROP CONSTRAINT [' + @var20 + '];');
+    ALTER TABLE [PayrollPeriods] ALTER COLUMN [Name] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    DECLARE @var21 sysname;
+    SELECT @var21 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[PaymentGatewayWebhooks]') AND [c].[name] = N'ProviderName');
+    IF @var21 IS NOT NULL EXEC(N'ALTER TABLE [PaymentGatewayWebhooks] DROP CONSTRAINT [' + @var21 + '];');
+    ALTER TABLE [PaymentGatewayWebhooks] ALTER COLUMN [ProviderName] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    DECLARE @var22 sysname;
+    SELECT @var22 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[LeaveTypes]') AND [c].[name] = N'Name');
+    IF @var22 IS NOT NULL EXEC(N'ALTER TABLE [LeaveTypes] DROP CONSTRAINT [' + @var22 + '];');
+    ALTER TABLE [LeaveTypes] ALTER COLUMN [Name] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    DECLARE @var23 sysname;
+    SELECT @var23 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[LabComputers]') AND [c].[name] = N'AssetTag');
+    IF @var23 IS NOT NULL EXEC(N'ALTER TABLE [LabComputers] DROP CONSTRAINT [' + @var23 + '];');
+    ALTER TABLE [LabComputers] ALTER COLUMN [AssetTag] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    DECLARE @var24 sysname;
+    SELECT @var24 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[IntegrationSettings]') AND [c].[name] = N'ProviderName');
+    IF @var24 IS NOT NULL EXEC(N'ALTER TABLE [IntegrationSettings] DROP CONSTRAINT [' + @var24 + '];');
+    ALTER TABLE [IntegrationSettings] ALTER COLUMN [ProviderName] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    DECLARE @var25 sysname;
+    SELECT @var25 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[IntegrationSettings]') AND [c].[name] = N'IntegrationType');
+    IF @var25 IS NOT NULL EXEC(N'ALTER TABLE [IntegrationSettings] DROP CONSTRAINT [' + @var25 + '];');
+    ALTER TABLE [IntegrationSettings] ALTER COLUMN [IntegrationType] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    DECLARE @var26 sysname;
+    SELECT @var26 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[Houses]') AND [c].[name] = N'Name');
+    IF @var26 IS NOT NULL EXEC(N'ALTER TABLE [Houses] DROP CONSTRAINT [' + @var26 + '];');
+    ALTER TABLE [Houses] ALTER COLUMN [Name] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    DECLARE @var27 sysname;
+    SELECT @var27 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[ComputerLabs]') AND [c].[name] = N'Name');
+    IF @var27 IS NOT NULL EXEC(N'ALTER TABLE [ComputerLabs] DROP CONSTRAINT [' + @var27 + '];');
+    ALTER TABLE [ComputerLabs] ALTER COLUMN [Name] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    DECLARE @var28 sysname;
+    SELECT @var28 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[Books]') AND [c].[name] = N'Isbn');
+    IF @var28 IS NOT NULL EXEC(N'ALTER TABLE [Books] DROP CONSTRAINT [' + @var28 + '];');
+    ALTER TABLE [Books] ALTER COLUMN [Isbn] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    DECLARE @var29 sysname;
+    SELECT @var29 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[BookCopies]') AND [c].[name] = N'CopyNumber');
+    IF @var29 IS NOT NULL EXEC(N'ALTER TABLE [BookCopies] DROP CONSTRAINT [' + @var29 + '];');
+    ALTER TABLE [BookCopies] ALTER COLUMN [CopyNumber] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    DECLARE @var30 sysname;
+    SELECT @var30 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[BookCategories]') AND [c].[name] = N'Name');
+    IF @var30 IS NOT NULL EXEC(N'ALTER TABLE [BookCategories] DROP CONSTRAINT [' + @var30 + '];');
+    ALTER TABLE [BookCategories] ALTER COLUMN [Name] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    DECLARE @var31 sysname;
+    SELECT @var31 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[AssetItems]') AND [c].[name] = N'AssetTag');
+    IF @var31 IS NOT NULL EXEC(N'ALTER TABLE [AssetItems] DROP CONSTRAINT [' + @var31 + '];');
+    ALTER TABLE [AssetItems] ALTER COLUMN [AssetTag] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    DECLARE @var32 sysname;
+    SELECT @var32 = [d].[name]
+    FROM [sys].[default_constraints] [d]
+    INNER JOIN [sys].[columns] [c] ON [d].[parent_column_id] = [c].[column_id] AND [d].[parent_object_id] = [c].[object_id]
+    WHERE ([d].[parent_object_id] = OBJECT_ID(N'[AssetCategories]') AND [c].[name] = N'Name');
+    IF @var32 IS NOT NULL EXEC(N'ALTER TABLE [AssetCategories] DROP CONSTRAINT [' + @var32 + '];');
+    ALTER TABLE [AssetCategories] ALTER COLUMN [Name] nvarchar(450) NOT NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    CREATE INDEX [IX_Visitors_TenantId_SchoolId_IdNumber] ON [Visitors] ([TenantId], [SchoolId], [IdNumber]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    CREATE INDEX [IX_VisitorLogs_TenantId_SchoolId_BadgeNumber_CheckInAtUtc] ON [VisitorLogs] ([TenantId], [SchoolId], [BadgeNumber], [CheckInAtUtc]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_TimetablePeriods_TenantId_SchoolId_DayOfWeek_StartTime_EndTime] ON [TimetablePeriods] ([TenantId], [SchoolId], [DayOfWeek], [StartTime], [EndTime]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_TimetableEntries_TenantId_SchoolId_AcademicYearId_TermId_GradeId_StreamId_TimetablePeriodId] ON [TimetableEntries] ([TenantId], [SchoolId], [AcademicYearId], [TermId], [GradeId], [StreamId], [TimetablePeriodId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_StaffMembers_TenantId_SchoolId_EmployeeNumber] ON [StaffMembers] ([TenantId], [SchoolId], [EmployeeNumber]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_SportTeams_TenantId_SchoolId_SportId_Name] ON [SportTeams] ([TenantId], [SchoolId], [SportId], [Name]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_Sports_TenantId_SchoolId_Name] ON [Sports] ([TenantId], [SchoolId], [Name]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_SportPlayers_TenantId_SchoolId_SportTeamId_StudentId] ON [SportPlayers] ([TenantId], [SchoolId], [SportTeamId], [StudentId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_Rooms_TenantId_SchoolId_Name] ON [Rooms] ([TenantId], [SchoolId], [Name]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    CREATE INDEX [IX_QuestionPapers_TenantId_SchoolId_QuestionPaperCategoryId_ExamYear_ExamType] ON [QuestionPapers] ([TenantId], [SchoolId], [QuestionPaperCategoryId], [ExamYear], [ExamType]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_QuestionPaperCategories_TenantId_SchoolId_SubjectId_GradeId_Name] ON [QuestionPaperCategories] ([TenantId], [SchoolId], [SubjectId], [GradeId], [Name]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_PosSales_TenantId_SchoolId_ReceiptNumber] ON [PosSales] ([TenantId], [SchoolId], [ReceiptNumber]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_PosProducts_TenantId_SchoolId_Sku] ON [PosProducts] ([TenantId], [SchoolId], [Sku]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_PosCategories_TenantId_SchoolId_Name] ON [PosCategories] ([TenantId], [SchoolId], [Name]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    CREATE INDEX [IX_PosCashierSessions_TenantId_SchoolId_CashierUserId_ClosedAtUtc] ON [PosCashierSessions] ([TenantId], [SchoolId], [CashierUserId], [ClosedAtUtc]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_PayrollPeriods_TenantId_SchoolId_Name] ON [PayrollPeriods] ([TenantId], [SchoolId], [Name]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    CREATE INDEX [IX_PaymentGatewayWebhooks_TenantId_SchoolId_ProviderName_ReceivedAtUtc] ON [PaymentGatewayWebhooks] ([TenantId], [SchoolId], [ProviderName], [ReceivedAtUtc]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_MemoApprovers_TenantId_SchoolId_MemoRequestId_ApproverUserId] ON [MemoApprovers] ([TenantId], [SchoolId], [MemoRequestId], [ApproverUserId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_LeaveTypes_TenantId_SchoolId_Name] ON [LeaveTypes] ([TenantId], [SchoolId], [Name]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_LabComputers_TenantId_SchoolId_AssetTag] ON [LabComputers] ([TenantId], [SchoolId], [AssetTag]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    CREATE INDEX [IX_LabBookings_TenantId_SchoolId_ComputerLabId_StartTimeUtc_EndTimeUtc] ON [LabBookings] ([TenantId], [SchoolId], [ComputerLabId], [StartTimeUtc], [EndTimeUtc]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_IntegrationSettings_TenantId_SchoolId_IntegrationType_ProviderName] ON [IntegrationSettings] ([TenantId], [SchoolId], [IntegrationType], [ProviderName]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_Houses_TenantId_SchoolId_Name] ON [Houses] ([TenantId], [SchoolId], [Name]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_ComputerLabs_TenantId_SchoolId_Name] ON [ComputerLabs] ([TenantId], [SchoolId], [Name]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    CREATE INDEX [IX_Books_TenantId_SchoolId_Isbn] ON [Books] ([TenantId], [SchoolId], [Isbn]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_BookCopies_TenantId_SchoolId_CopyNumber] ON [BookCopies] ([TenantId], [SchoolId], [CopyNumber]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_BookCategories_TenantId_SchoolId_Name] ON [BookCategories] ([TenantId], [SchoolId], [Name]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_AssetItems_TenantId_SchoolId_AssetTag] ON [AssetItems] ([TenantId], [SchoolId], [AssetTag]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_AssetCategories_TenantId_SchoolId_Name] ON [AssetCategories] ([TenantId], [SchoolId], [Name]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502034735_Phase6OperationsModules'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20260502034735_Phase6OperationsModules', N'8.0.6');
+END;
+GO
+
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502041150_Phase7HardeningAndFeatureFlags'
+)
+BEGIN
+    CREATE TABLE [TenantFeatureFlags] (
+        [Id] uniqueidentifier NOT NULL,
+        [FeatureCode] nvarchar(450) NOT NULL,
+        [IsEnabled] bit NOT NULL,
+        [Description] nvarchar(max) NOT NULL,
+        [CreatedAtUtc] datetime2 NOT NULL,
+        [UpdatedAtUtc] datetime2 NULL,
+        [DeletedAtUtc] datetime2 NULL,
+        [IsDeleted] bit NOT NULL,
+        [TenantId] uniqueidentifier NOT NULL,
+        CONSTRAINT [PK_TenantFeatureFlags] PRIMARY KEY ([Id])
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502041150_Phase7HardeningAndFeatureFlags'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_TenantFeatureFlags_TenantId_FeatureCode] ON [TenantFeatureFlags] ([TenantId], [FeatureCode]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20260502041150_Phase7HardeningAndFeatureFlags'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20260502041150_Phase7HardeningAndFeatureFlags', N'8.0.6');
+END;
+GO
+
+COMMIT;
+GO
+

@@ -46,11 +46,34 @@ public class CreateTenantRequestValidator : AbstractValidator<CreateTenantReques
     }
 }
 
+public class UpdateTenantRequestValidator : AbstractValidator<UpdateTenantRequest>
+{
+    public UpdateTenantRequestValidator()
+    {
+        RuleFor(x => x.Name).NotEmpty().MaximumLength(200);
+        RuleFor(x => x.Code).NotEmpty().MaximumLength(50);
+        RuleFor(x => x.ContactEmail).NotEmpty().EmailAddress().MaximumLength(256);
+        RuleFor(x => x.ContactPhone).NotEmpty().MaximumLength(30);
+    }
+}
+
 public class CreateSchoolRequestValidator : AbstractValidator<CreateSchoolRequest>
 {
     public CreateSchoolRequestValidator()
     {
         RuleFor(x => x.TenantId).NotEmpty();
+        RuleFor(x => x.Name).NotEmpty().MaximumLength(200);
+        RuleFor(x => x.Code).NotEmpty().MaximumLength(50);
+        RuleFor(x => x.Email).NotEmpty().EmailAddress().MaximumLength(256);
+        RuleFor(x => x.Phone).NotEmpty().MaximumLength(30);
+        RuleFor(x => x.Address).NotEmpty().MaximumLength(500);
+    }
+}
+
+public class UpdateSchoolRequestValidator : AbstractValidator<UpdateSchoolRequest>
+{
+    public UpdateSchoolRequestValidator()
+    {
         RuleFor(x => x.Name).NotEmpty().MaximumLength(200);
         RuleFor(x => x.Code).NotEmpty().MaximumLength(50);
         RuleFor(x => x.Email).NotEmpty().EmailAddress().MaximumLength(256);
@@ -139,5 +162,75 @@ public class UpsertMasterDataItemRequestValidator : AbstractValidator<UpsertMast
         RuleFor(x => x.Code).NotEmpty().MaximumLength(50);
         RuleFor(x => x.Name).NotEmpty().MaximumLength(200);
         RuleFor(x => x.DisplayOrder).GreaterThanOrEqualTo(0);
+    }
+}
+
+public class CreateSubscriptionPlanRequestValidator : AbstractValidator<CreateSubscriptionPlanRequest>
+{
+    public CreateSubscriptionPlanRequestValidator()
+    {
+        RuleFor(x => x.Name).NotEmpty().MaximumLength(120);
+        RuleFor(x => x.MonthlyPriceUsd).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.MaxSchools).GreaterThan(0);
+        RuleFor(x => x.MaxUsers).GreaterThan(0);
+    }
+}
+
+public class UpdateSubscriptionPlanRequestValidator : AbstractValidator<UpdateSubscriptionPlanRequest>
+{
+    public UpdateSubscriptionPlanRequestValidator()
+    {
+        RuleFor(x => x.Name).NotEmpty().MaximumLength(120);
+        RuleFor(x => x.MonthlyPriceUsd).GreaterThanOrEqualTo(0);
+        RuleFor(x => x.MaxSchools).GreaterThan(0);
+        RuleFor(x => x.MaxUsers).GreaterThan(0);
+    }
+}
+
+public class CreateTenantSubscriptionRequestValidator : AbstractValidator<CreateTenantSubscriptionRequest>
+{
+    public CreateTenantSubscriptionRequestValidator()
+    {
+        RuleFor(x => x.TenantId).NotEmpty();
+        RuleFor(x => x.SubscriptionPlanId).NotEmpty();
+        RuleFor(x => x.StartDateUtc).NotEmpty();
+        RuleFor(x => x.EndDateUtc).GreaterThan(x => x.StartDateUtc);
+    }
+}
+
+public class UpdateTenantSubscriptionRequestValidator : AbstractValidator<UpdateTenantSubscriptionRequest>
+{
+    public UpdateTenantSubscriptionRequestValidator()
+    {
+        RuleFor(x => x.SubscriptionPlanId).NotEmpty();
+        RuleFor(x => x.StartDateUtc).NotEmpty();
+        RuleFor(x => x.EndDateUtc).GreaterThan(x => x.StartDateUtc);
+    }
+}
+
+public class UpsertUserSchoolAccessRequestValidator : AbstractValidator<UpsertUserSchoolAccessRequest>
+{
+    public UpsertUserSchoolAccessRequestValidator()
+    {
+        RuleFor(x => x.TenantId).NotEmpty();
+        RuleFor(x => x.SchoolId).NotEmpty();
+    }
+}
+
+public class UpsertUserPermissionRequestValidator : AbstractValidator<UpsertUserPermissionRequest>
+{
+    public UpsertUserPermissionRequestValidator()
+    {
+        RuleFor(x => x.TenantId).NotEmpty();
+        RuleFor(x => x.PermissionCode).NotEmpty().MaximumLength(120);
+    }
+}
+
+public class AssignRolePermissionRequestValidator : AbstractValidator<AssignRolePermissionRequest>
+{
+    public AssignRolePermissionRequestValidator()
+    {
+        RuleFor(x => x.TenantId).NotEmpty();
+        RuleFor(x => x.PermissionCode).NotEmpty().MaximumLength(120);
     }
 }

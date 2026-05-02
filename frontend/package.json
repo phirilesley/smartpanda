@@ -1,0 +1,84 @@
+{
+  "name": "smart-panda-frontend",
+  "version": "1.0.0",
+  "description": "Smart Panda School System - World's Most Advanced School Management Platform",
+  "private": true,
+  "dependencies": {
+    "@headlessui/react": "^1.7.13",
+    "@heroicons/react": "^2.0.16",
+    "@tailwindcss/forms": "^0.5.3",
+    "@tailwindcss/typography": "^0.5.9",
+    "@types/node": "^18.15.0",
+    "@types/react": "^18.0.28",
+    "@types/react-dom": "^18.0.11",
+    "autoprefixer": "^10.4.14",
+    "axios": "^1.3.4",
+    "chart.js": "^4.2.1",
+    "clsx": "^1.2.1",
+    "date-fns": "^2.29.3",
+    "framer-motion": "^10.0.1",
+    "postcss": "^8.4.21",
+    "react": "^18.2.0",
+    "react-chartjs-2": "^5.2.0",
+    "react-dom": "^18.2.0",
+    "react-hot-toast": "^2.4.0",
+    "react-intersection-observer": "^9.4.3",
+    "react-query": "^3.39.3",
+    "react-router-dom": "^6.8.1",
+    "react-scripts": "5.0.1",
+    "react-speech-kit": "^3.0.1",
+    "react-virtualized-auto-sizer": "^1.0.20",
+    "react-window": "^1.8.8",
+    "tailwindcss": "^3.2.7",
+    "typescript": "^4.9.5",
+    "web-vitals": "^3.3.0",
+    "workbox-webpack-plugin": "^6.5.4",
+    "zustand": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/chart.js": "^2.9.34",
+    "ajv": "^8.20.0",
+    "ajv-keywords": "^5.1.0",
+    "eslint": "^8.36.0",
+    "eslint-config-react-app": "^7.0.1",
+    "prettier": "^2.8.4"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "lint": "eslint src --ext .ts,.tsx",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "format": "prettier --write src/**/*.{ts,tsx,css,md}"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "keywords": [
+    "education",
+    "school-management",
+    "analytics",
+    "ai",
+    "mobile",
+    "pwa",
+    "smart-panda"
+  ],
+  "author": "Smart Panda Education Technologies",
+  "license": "MIT"
+}

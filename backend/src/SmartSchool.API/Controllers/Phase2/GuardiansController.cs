@@ -76,11 +76,69 @@ public class GuardiansController(SmartSchoolDbContext dbContext) : ControllerBas
 
         return Ok(item);
     }
+
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<Guardian>> Update(Guid id, [FromBody] UpdateGuardianRequest request, CancellationToken cancellationToken)
+    {
+        var guardian = await dbContext.Guardians.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (guardian is null)
+        {
+            return NotFound();
+        }
+
+        if (!User.CanAccessTenant(guardian.TenantId))
+        {
+            return Forbid();
+        }
+
+        guardian.FirstName = request.FirstName.Trim();
+        guardian.LastName = request.LastName.Trim();
+        guardian.PhoneNumber = request.PhoneNumber.Trim();
+        guardian.Email = request.Email.Trim();
+        guardian.Relationship = request.Relationship.Trim();
+        guardian.UpdatedAtUtc = DateTime.UtcNow;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return Ok(guardian);
+    }
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        var guardian = await dbContext.Guardians.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (guardian is null)
+        {
+            return NotFound();
+        }
+
+        if (!User.CanAccessTenant(guardian.TenantId))
+        {
+            return Forbid();
+        }
+
+        // Check if guardian has student links
+        var hasStudentLinks = await dbContext.StudentGuardians.AnyAsync(x => x.GuardianId == id, cancellationToken);
+        if (hasStudentLinks)
+        {
+            return BadRequest("Cannot delete guardian with linked students.");
+        }
+
+        dbContext.Guardians.Remove(guardian);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return NoContent();
+    }
 }
 
 public sealed record CreateGuardianRequest(
     Guid TenantId,
     Guid SchoolId,
+    string FirstName,
+    string LastName,
+    string PhoneNumber,
+    string Email,
+    string Relationship);
+
+public sealed record UpdateGuardianRequest(
     string FirstName,
     string LastName,
     string PhoneNumber,

@@ -11,27 +11,40 @@ namespace SmartSchool.API.Controllers.Phase1;
 [Route("api/academics/grades")]
 [Authorize(Policy = PolicyNames.AcademicsManage)]
 [Authorize(Policy = PolicyNames.SchoolAccess)]
-public class GradesController(SmartSchoolDbContext dbContext) : ControllerBase
+public class GradesController(SmartSchoolDbContext dbContext, ILogger<GradesController> logger) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<Grade>>> GetAll([FromQuery] Guid tenantId, [FromQuery] Guid schoolId, CancellationToken cancellationToken)
     {
+        logger.LogInformation("Getting grades for tenant {TenantId}, school {SchoolId}", tenantId, schoolId);
+
         if (tenantId == Guid.Empty || schoolId == Guid.Empty)
         {
+            logger.LogWarning("Invalid parameters: tenantId={TenantId}, schoolId={SchoolId}", tenantId, schoolId);
             return BadRequest("tenantId and schoolId are required.");
         }
 
         if (!User.CanAccessTenant(tenantId))
         {
+            logger.LogWarning("User {UserId} denied access to tenant {TenantId}", User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, tenantId);
             return Forbid();
         }
 
-        var items = await dbContext.Grades.AsNoTracking()
-            .Where(x => x.TenantId == tenantId && x.SchoolId == schoolId)
-            .OrderBy(x => x.GradeOrder)
-            .ToListAsync(cancellationToken);
+        try
+        {
+            var items = await dbContext.Grades.AsNoTracking()
+                .Where(x => x.TenantId == tenantId && x.SchoolId == schoolId)
+                .OrderBy(x => x.GradeOrder)
+                .ToListAsync(cancellationToken);
 
-        return Ok(items);
+            logger.LogInformation("Retrieved {Count} grades for tenant {TenantId}, school {SchoolId}", items.Count, tenantId, schoolId);
+            return Ok(items);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error retrieving grades for tenant {TenantId}, school {SchoolId}", tenantId, schoolId);
+            throw;
+        }
     }
 
     [HttpPost]
@@ -83,6 +96,73 @@ public class GradesController(SmartSchoolDbContext dbContext) : ControllerBase
 
         return Ok(item);
     }
+
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<Grade>> Update(Guid id, [FromBody] UpdateGradeRequest request, CancellationToken cancellationToken)
+    {
+        var grade = await dbContext.Grades.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (grade is null)
+        {
+            return NotFound();
+        }
+
+        if (!User.CanAccessTenant(grade.TenantId))
+        {
+            return Forbid();
+        }
+
+        var duplicate = await dbContext.Grades.AnyAsync(
+            x => x.Id != id && x.TenantId == grade.TenantId && x.SchoolId == grade.SchoolId && x.GradeOrder == request.GradeOrder,
+            cancellationToken);
+        if (duplicate)
+        {
+            return Conflict("Grade order already exists for this school.");
+        }
+
+        grade.Name = request.Name.Trim();
+        grade.GradeOrder = request.GradeOrder;
+        grade.IsTerminalGrade = request.IsTerminalGrade;
+        grade.IsActive = request.IsActive;
+        grade.UpdatedAtUtc = DateTime.UtcNow;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return Ok(grade);
+    }
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        var grade = await dbContext.Grades.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (grade is null)
+        {
+            return NotFound();
+        }
+
+        if (!User.CanAccessTenant(grade.TenantId))
+        {
+            return Forbid();
+        }
+
+        // Check if grade has streams
+        var hasStreams = await dbContext.Streams.AnyAsync(x => x.GradeId == id, cancellationToken);
+        if (hasStreams)
+        {
+            return BadRequest("Cannot delete grade with existing streams.");
+        }
+
+        // Check if grade has enrollments
+        var hasEnrollments = await dbContext.StudentEnrollments.AnyAsync(x => x.GradeId == id, cancellationToken);
+        if (hasEnrollments)
+        {
+            return BadRequest("Cannot delete grade with existing enrollments.");
+        }
+
+        dbContext.Grades.Remove(grade);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return NoContent();
+    }
 }
 
 public sealed record CreateGradeRequest(Guid TenantId, Guid SchoolId, string Name, int GradeOrder, bool IsTerminalGrade);
+
+public sealed record UpdateGradeRequest(string Name, int GradeOrder, bool IsTerminalGrade, bool IsActive);
