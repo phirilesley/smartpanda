@@ -1,4 +1,15 @@
-﻿using FluentValidation;
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
+using FluentValidation;
 using SmartSchool.API.Controllers.Phase5;
 
 namespace SmartSchool.API.Validation;
@@ -11,8 +22,8 @@ public class CreateAttendanceSessionRequestValidator : AbstractValidator<CreateA
         RuleFor(x => x.SchoolId).NotEmpty();
         RuleFor(x => x.AcademicYearId).NotEmpty();
         RuleFor(x => x.TermId).NotEmpty();
-        RuleFor(x => x.SessionType).NotEmpty().MaximumLength(50);
-        RuleFor(x => x.AttendanceDate).NotEmpty();
+        RuleFor(x => x.ResolveSessionType()).NotEmpty().MaximumLength(50);
+        RuleFor(x => x.ResolveAttendanceDate()).Must(x => x != default);
     }
 }
 

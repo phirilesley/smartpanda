@@ -1,16 +1,29 @@
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
+using SmartSchool.API.Models;
 using Hangfire;
-using SmartSchool.API.Data;
-using SmartSchool.API.Services;
+using Microsoft.EntityFrameworkCore;
+using SmartSchool.Persistence.Data;
 
 namespace SmartSchool.API.Services
 {
     public class MonitoringJobs
     {
-        private readonly AppDbContext _context;
+        private readonly SmartSchoolDbContext _context;
         private readonly IAlertService _alertService;
         private readonly ILogger<MonitoringJobs> _logger;
 
-        public MonitoringJobs(AppDbContext context, IAlertService alertService, ILogger<MonitoringJobs> logger)
+        public MonitoringJobs(SmartSchoolDbContext context, IAlertService alertService, ILogger<MonitoringJobs> logger)
         {
             _context = context;
             _alertService = alertService;
@@ -54,19 +67,8 @@ namespace SmartSchool.API.Services
         {
             try
             {
-                var cutoffDate = DateTime.UtcNow.AddDays(-30); // Keep alerts for 30 days
-                
-                var oldAlerts = await _context.Alerts
-                    .Where(a => a.CreatedAtUtc < cutoffDate && a.IsAcknowledged)
-                    .ToListAsync(cancellationToken);
-
-                if (oldAlerts.Any())
-                {
-                    _context.Alerts.RemoveRange(oldAlerts);
-                    await _context.SaveChangesAsync(cancellationToken);
-                    
-                    _logger.LogInformation("Cleaned up {AlertCount} old alerts", oldAlerts.Count);
-                }
+                await Task.CompletedTask;
+                _logger.LogInformation("Alert cleanup completed (in-memory alert store; no persisted rows to purge).");
             }
             catch (Exception ex)
             {
@@ -82,7 +84,6 @@ namespace SmartSchool.API.Services
             {
                 var tenants = await _context.Tenants
                     .Where(t => t.IsActive)
-                    .Include(t => t.Schools)
                     .ToListAsync(cancellationToken);
 
                 foreach (var tenant in tenants)
@@ -112,17 +113,16 @@ namespace SmartSchool.API.Services
             var totalUsers = await _context.Users.CountAsync(u => u.TenantId == tenantId, cancellationToken);
             var activeUsers = await _context.Users.CountAsync(u => u.TenantId == tenantId && u.IsActive, cancellationToken);
             var totalStudents = await _context.Students.CountAsync(s => s.TenantId == tenantId, cancellationToken);
-            var activeStudents = await _context.Students.CountAsync(s => s.TenantId == tenantId && s.IsActive, cancellationToken);
-            var totalStaff = await _context.Staff.CountAsync(s => s.TenantId == tenantId, cancellationToken);
-            var activeStaff = await _context.Staff.CountAsync(s => s.TenantId == tenantId && s.IsActive, cancellationToken);
+            var activeStudents = await _context.Students.CountAsync(s => s.TenantId == tenantId && s.Status == "Active", cancellationToken);
+            var totalStaff = await _context.StaffMembers.CountAsync(s => s.TenantId == tenantId, cancellationToken);
+            var activeStaff = await _context.StaffMembers.CountAsync(s => s.TenantId == tenantId && s.IsActive, cancellationToken);
 
             var totalInvoices = await _context.StudentInvoices.CountAsync(i => i.TenantId == tenantId, cancellationToken);
-            var paidInvoices = await _context.StudentInvoices.CountAsync(i => i.TenantId == tenantId && i.IsPaid, cancellationToken);
+            var paidInvoices = await _context.StudentInvoices.CountAsync(i => i.TenantId == tenantId && string.Equals(i.Status, "Paid", StringComparison.OrdinalIgnoreCase), cancellationToken);
             var totalRevenue = await _context.Payments.Where(p => p.TenantId == tenantId)
                 .SumAsync(p => (decimal?)p.Amount, cancellationToken) ?? 0m;
 
-            var activeAlerts = await _context.Alerts
-                .CountAsync(a => a.TenantId == tenantId && a.IsActive && !a.IsAcknowledged, cancellationToken);
+            var activeAlerts = (await _alertService.GetActiveAlertsAsync(tenantId, cancellationToken)).Count;
 
             return new
             {

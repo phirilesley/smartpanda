@@ -1,65 +1,44 @@
-# Remaining Work Checklist
+# Remaining Work Checklist (Current Baseline)
 
-Date: 2026-05-02  
-Scope: production hardening after module expansion from 41 to 46 modules.
+Date: 2026-05-03  
+Scope: production hardening after enterprise scope alignment to 50 modules.
+
+## Historical note
+This file previously tracked expansion from 41 to 46 modules. That baseline is now superseded by:
+- `docs/MODULES.md` (50 modules)
+- `docs/PHASES.md` (phase mapping for all 50)
 
 ## 1) Current baseline
-- Domain and Persistence projects compile with the new module schema.
-- Full API project build is currently blocked by existing Phase 5 portal controller compile errors that predate this pass.
-- Frontend module catalog route coverage is present for all modules.
-- Frontend production build passes.
-- EF migration generated for modules `#42-#46` plus SQL script: `008_phase6_events_transport_hostel_health_clinic.sql`.
-- New modules added in this pass:
-  - `#42 Events Management`
-  - `#43 Transport Management`
-  - `#44 Hostel Management`
-  - `#45 Health Management`
-  - `#46 Clinic Management`
+- Module catalog and phase map are aligned at 50 modules.
+- Backend builds successfully.
+- Integration tests pass on current suite (`221/221`).
+- Consolidated SQL script exists at `database/sql/000_full_idempotent_latest.sql`.
 
-## 2) Remaining engineering work
+## 2) Remaining engineering depth (quality, not catalog count)
 
-### A. Deep workflow completion (per module)
-- Expand advanced business workflows for modules that currently have starter CRUD only:
-  - `#42` event registration, event attendance, venue conflict checks.
-  - `#43` trip scheduling, route stop sequencing, parent pickup/drop notifications.
-  - `#44` room/bed transfer workflow, hostel discipline logs, checkout/clearance.
-  - `#45` immunization schedule engine, chronic condition action plans, alerts.
-  - `#46` pharmacy stock movement, prescription fulfillment, referral workflow.
+### A. Workflow depth
+- Expand selected module workflows from starter CRUD to full business lifecycle where needed.
+- Prioritize high-risk domains: finance approvals, clinic/health safety checks, hostel allocation edge cases, transport lifecycle exceptions.
 
-### B. Authorization hardening
-- Enforce fine-grained permissions for create/update/delete across all Phase 6 modules (not only policy-level module guards).
-- Add role matrices for nurse/matron/transport officer/event coordinator roles.
+### B. Authorization depth
+- Tighten fine-grained permissions per action beyond module-level policy gates.
+- Validate role matrices for school operations personas (matron, nurse, transport officer, events coordinator, bursar, etc.).
 
-### C. Validation and domain rules
-- Add cross-entity validation rules:
-  - no student can have overlapping hostel bed allocations.
-  - no vehicle can run overlapping active trips.
-  - clinic visits must respect tenant-school isolation and patient ownership.
-  - medication dispense quantity cannot exceed available stock.
+### C. Rule hardening
+- Add/expand cross-entity invariants and conflict checks.
+- Ensure all sensitive paths remain tenant/school isolated with explicit test coverage.
 
-### D. Integration test expansion
-- Add module-level integration tests for `#42-#46` covering:
-  - authz behavior
-  - tenant/school isolation
-  - invalid-relationship rejection
-  - workflow correctness
+### D. UI workflow maturity
+- Ensure module screens have full task flows: search/filter, create/edit validation, history/timeline, and export-friendly views.
 
-### E. Frontend UX depth
-- Replace module starter views with full task-oriented screens:
-  - search/filter/sort
-  - create/edit forms with validation feedback
-  - detail views + timeline/history
-  - export-ready tabular grids
+### E. Operational readiness
+- Keep migration and consolidated SQL artifacts synchronized after each schema change.
+- Maintain seed/demo datasets for Zimbabwe day-school and boarding-school scenarios.
 
-### F. Data and operations
-- Regenerate consolidated `database/sql/000_full_idempotent_latest.sql` to include migration `008_phase6_events_transport_hostel_health_clinic.sql`.
-- Run seed data refresh for Zimbabwe school demo tenants (day school + boarding school).
-- Add monitoring dashboards and operational alerts for new module jobs.
-
-## 3) Definition of done for “100% complete”
+## 3) Definition of done for "100% complete"
 - Every module has:
   - backend APIs with complete lifecycle behavior
-  - UI workflows (not just route placeholders)
-  - integration tests for security/isolation/rules
-  - auditability on sensitive actions
-  - documentation updated in `MODULES.md`, `PHASES.md`, and API docs
+  - UI workflows beyond placeholders
+  - integration tests for authz/isolation/rules
+  - auditable trails for sensitive actions
+  - documentation updated across `MODULES.md`, `PHASES.md`, and API references

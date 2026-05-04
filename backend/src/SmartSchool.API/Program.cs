@@ -1,4 +1,16 @@
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Asp.Versioning;
 using FluentValidation;
@@ -10,6 +22,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using SmartSchool.API.Features;
+using SmartSchool.API.HealthChecks;
 using SmartSchool.API.Integrations;
 using SmartSchool.API.Jobs;
 using SmartSchool.API.Middleware;
@@ -25,7 +38,12 @@ var isTesting = builder.Environment.IsEnvironment("Testing");
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
 
-builder.Services.AddControllers();
+builder.Services
+    .AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
@@ -86,13 +104,16 @@ builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddPersistence(builder.Configuration);
 builder.Services.AddInfrastructure();
 
-// Add Redis Caching
+// 🚀 Add Advanced Caching with Redis/Memory Fallback
 var redisConnectionString = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";
 builder.Services.AddStackExchangeRedisCache(options =>
 {
     options.Configuration = redisConnectionString;
     options.InstanceName = "SmartSchool:";
 });
+
+builder.Services.Configure<CacheOptions>(builder.Configuration.GetSection("Cache"));
+builder.Services.AddScoped<CacheService>();
 
 if (!isTesting)
 {
@@ -207,6 +228,58 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy(PolicyNames.PortalStaffAccess, policy =>
         policy.Requirements.Add(new PermissionRequirement(PermissionCodes.PortalStaffAccess)));
 
+    options.AddPolicy(PolicyNames.EventsManage, policy =>
+        policy.Requirements.Add(new PermissionRequirement(PermissionCodes.EventsManage)));
+    options.AddPolicy(PolicyNames.EventsView, policy =>
+        policy.Requirements.Add(new PermissionRequirement(PermissionCodes.EventsView)));
+    options.AddPolicy(PolicyNames.EventsCoordinate, policy =>
+        policy.Requirements.Add(new PermissionRequirement(PermissionCodes.EventsCoordinate)));
+
+    options.AddPolicy(PolicyNames.TransportManage, policy =>
+        policy.Requirements.Add(new PermissionRequirement(PermissionCodes.TransportManage)));
+    options.AddPolicy(PolicyNames.TransportView, policy =>
+        policy.Requirements.Add(new PermissionRequirement(PermissionCodes.TransportView)));
+    options.AddPolicy(PolicyNames.TransportDrive, policy =>
+        policy.Requirements.Add(new PermissionRequirement(PermissionCodes.TransportDrive)));
+    options.AddPolicy(PolicyNames.TransportAssign, policy =>
+        policy.Requirements.Add(new PermissionRequirement(PermissionCodes.TransportAssign)));
+
+    options.AddPolicy(PolicyNames.HostelsManage, policy =>
+        policy.Requirements.Add(new PermissionRequirement(PermissionCodes.HostelsManage)));
+    options.AddPolicy(PolicyNames.HostelsView, policy =>
+        policy.Requirements.Add(new PermissionRequirement(PermissionCodes.HostelsView)));
+    options.AddPolicy(PolicyNames.HostelsMatron, policy =>
+        policy.Requirements.Add(new PermissionRequirement(PermissionCodes.HostelsMatron)));
+    options.AddPolicy(PolicyNames.HostelsStudent, policy =>
+        policy.Requirements.Add(new PermissionRequirement(PermissionCodes.HostelsStudent)));
+
+    options.AddPolicy(PolicyNames.HealthManage, policy =>
+        policy.Requirements.Add(new PermissionRequirement(PermissionCodes.HealthManage)));
+    options.AddPolicy(PolicyNames.HealthView, policy =>
+        policy.Requirements.Add(new PermissionRequirement(PermissionCodes.HealthView)));
+    options.AddPolicy(PolicyNames.HealthNurse, policy =>
+        policy.Requirements.Add(new PermissionRequirement(PermissionCodes.HealthNurse)));
+    options.AddPolicy(PolicyNames.HealthStudent, policy =>
+        policy.Requirements.Add(new PermissionRequirement(PermissionCodes.HealthStudent)));
+
+    options.AddPolicy(PolicyNames.ClinicManage, policy =>
+        policy.Requirements.Add(new PermissionRequirement(PermissionCodes.ClinicManage)));
+    options.AddPolicy(PolicyNames.ClinicView, policy =>
+        policy.Requirements.Add(new PermissionRequirement(PermissionCodes.ClinicView)));
+    options.AddPolicy(PolicyNames.ClinicDoctor, policy =>
+        policy.Requirements.Add(new PermissionRequirement(PermissionCodes.ClinicDoctor)));
+    options.AddPolicy(PolicyNames.ClinicPatient, policy =>
+        policy.Requirements.Add(new PermissionRequirement(PermissionCodes.ClinicPatient)));
+
+    options.AddPolicy(PolicyNames.SportsManage, policy =>
+        policy.Requirements.Add(new PermissionRequirement(PermissionCodes.SportsManage)));
+    options.AddPolicy(PolicyNames.AwardsManage, policy =>
+        policy.Requirements.Add(new PermissionRequirement(PermissionCodes.AwardsManage)));
+    options.AddPolicy(PolicyNames.ClubsManage, policy =>
+        policy.Requirements.Add(new PermissionRequirement(PermissionCodes.ClubsManage)));
+    options.AddPolicy(PolicyNames.LeadershipManage, policy =>
+        policy.Requirements.Add(new PermissionRequirement(PermissionCodes.LeadershipManage)));
+
     options.AddPolicy(PolicyNames.SchoolAccess, policy =>
         policy.Requirements.Add(new SchoolAccessRequirement()));
 });
@@ -217,6 +290,7 @@ builder.Services.AddScoped<IIntegrationSecretProtector, IntegrationSecretProtect
 builder.Services.AddScoped<SecurityBootstrapService>();
 builder.Services.AddScoped<SystemMaintenanceJobs>();
 builder.Services.AddScoped<NotificationDispatchJobs>();
+builder.Services.AddScoped<SmartSchool.API.Services.MonitoringJobs>();
 
 // Add cross-entity validation
 builder.Services.AddScoped<SmartSchool.API.Validation.CrossEntityValidationService>();
@@ -225,6 +299,11 @@ builder.Services.AddScoped<SmartSchool.API.Validation.CrossEntityValidationFilte
 // Add monitoring and alert services
 builder.Services.AddScoped<SmartSchool.API.Services.IAlertService, SmartSchool.API.Services.AlertService>();
 builder.Services.AddScoped<SmartSchool.API.Services.IEmailService, SmartSchool.API.Services.EmailService>();
+
+// 🚀 Add Background Job Services
+builder.Services.AddScoped<SmartSchool.API.Jobs.ReportGenerationJobs>();
+builder.Services.AddScoped<SmartSchool.API.Jobs.DataSyncJobs>();
+
 builder.Services.AddHealthChecks()
     .AddCheck<DatabaseHealthCheck>("database")
     .AddCheck<MemoryHealthCheck>("memory")
@@ -263,22 +342,31 @@ if (!isTesting)
         job => job.DispatchQueuedNotifications(),
         Cron.Minutely);
 
-    // Add monitoring jobs
-    builder.Services.AddScoped<SmartSchool.API.Services.MonitoringJobs>();
-    
     RecurringJob.AddOrUpdate<SmartSchool.API.Services.MonitoringJobs>(
         "monitoring-check-alerts",
-        job => job.CheckAllTenantsAlertsAsync(),
+        job => job.CheckAllTenantsAlertsAsync(CancellationToken.None),
         Cron.MinuteInterval(5));
 
     RecurringJob.AddOrUpdate<SmartSchool.API.Services.MonitoringJobs>(
         "monitoring-cleanup-alerts",
-        job => job.CleanupOldAlertsAsync(),
+        job => job.CleanupOldAlertsAsync(CancellationToken.None),
         Cron.Daily(2, 0)); // 2 AM daily
+
+    // 🚀 Add Report Generation Jobs
+    RecurringJob.AddOrUpdate<SmartSchool.API.Jobs.ReportGenerationJobs>(
+        "reports-cleanup-old",
+        job => job.CleanupOldReports(),
+        Cron.Weekly(DayOfWeek.Sunday, 3, 0)); // 3 AM Sunday
+
+    // 🚀 Add Data Sync Jobs
+    RecurringJob.AddOrUpdate<SmartSchool.API.Jobs.DataSyncJobs>(
+        "sync-cleanup-logs",
+        job => job.CleanupSyncLogs(),
+        Cron.Daily(1, 0)); // 1 AM daily
 
     RecurringJob.AddOrUpdate<SmartSchool.API.Services.MonitoringJobs>(
         "monitoring-health-report",
-        job => job.GenerateSystemHealthReportAsync(),
+        job => job.GenerateSystemHealthReportAsync(CancellationToken.None),
         Cron.Daily(6, 0)); // 6 AM daily
 }
 

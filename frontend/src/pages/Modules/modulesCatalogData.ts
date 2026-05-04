@@ -34,7 +34,7 @@ export const moduleCatalog: ModuleDefinition[] = [
   { id: 22, slug: 'question-bank', name: 'Question Paper Bank', phase: 'Phase 6', backendStatus: 'implemented', frontendStatus: 'implemented', viewPath: '/modules/question-bank', backendArea: 'Controllers/Phase6/QuestionBank' },
   { id: 23, slug: 'memos-approval', name: 'Memo & Approval Workflow', phase: 'Phase 6', backendStatus: 'implemented', frontendStatus: 'implemented', viewPath: '/modules/memos-approval', backendArea: 'Controllers/Phase6/Memos' },
   { id: 24, slug: 'pos', name: 'POS/Canteen/Tuckshop', phase: 'Phase 6', backendStatus: 'implemented', frontendStatus: 'implemented', viewPath: '/modules/pos', backendArea: 'Controllers/Phase6/Pos' },
-  { id: 25, slug: 'sports', name: 'Sports Management', phase: 'Phase 6', backendStatus: 'implemented', frontendStatus: 'implemented', viewPath: '/modules/sports', backendArea: 'Controllers/Phase6/Sports' },
+  { id: 25, slug: 'sports-program-administration', name: 'Sports Program Administration', phase: 'Phase 6', backendStatus: 'implemented', frontendStatus: 'implemented', viewPath: '/modules/sports-program-administration', backendArea: 'Controllers/Phase6/Sports + SportsManagement' },
   { id: 26, slug: 'timetable', name: 'Timetable Management', phase: 'Phase 6', backendStatus: 'implemented', frontendStatus: 'implemented', viewPath: '/modules/timetable', backendArea: 'Controllers/Phase6/Timetable' },
   { id: 27, slug: 'communication', name: 'Communication', phase: 'Phase 5', backendStatus: 'implemented', frontendStatus: 'implemented', viewPath: '/modules/communication', backendArea: 'Controllers/Phase5/Communication' },
   { id: 28, slug: 'notifications', name: 'Notifications', phase: 'Phase 5', backendStatus: 'implemented', frontendStatus: 'implemented', viewPath: '/modules/notifications', backendArea: 'Controllers/Phase5/Notifications' },
@@ -55,7 +55,11 @@ export const moduleCatalog: ModuleDefinition[] = [
   { id: 43, slug: 'transport-management', name: 'Transport Management', phase: 'Phase 6', backendStatus: 'implemented', frontendStatus: 'implemented', viewPath: '/operations/transport-management', backendArea: 'Controllers/Phase6/Transport' },
   { id: 44, slug: 'hostel-management', name: 'Hostel Management', phase: 'Phase 6', backendStatus: 'implemented', frontendStatus: 'implemented', viewPath: '/operations/hostel-management', backendArea: 'Controllers/Phase6/Hostels' },
   { id: 45, slug: 'health-management', name: 'Health Management', phase: 'Phase 6', backendStatus: 'implemented', frontendStatus: 'implemented', viewPath: '/operations/health-management', backendArea: 'Controllers/Phase6/Health' },
-  { id: 46, slug: 'clinic-management', name: 'Clinic Management', phase: 'Phase 6', backendStatus: 'implemented', frontendStatus: 'implemented', viewPath: '/operations/clinic-management', backendArea: 'Controllers/Phase6/Clinic' }
+  { id: 46, slug: 'clinic-management', name: 'Clinic Management', phase: 'Phase 6', backendStatus: 'implemented', frontendStatus: 'implemented', viewPath: '/operations/clinic-management', backendArea: 'Controllers/Phase6/Clinic' },
+  { id: 47, slug: 'sports-taxonomy-teams', name: 'Sports Taxonomy & Team Lifecycle', phase: 'Phase 6', backendStatus: 'implemented', frontendStatus: 'implemented', viewPath: '/operations/sports-management', backendArea: 'Controllers/Phase6/SportsCategories + SportTeams' },
+  { id: 48, slug: 'club-management', name: 'Club Management', phase: 'Phase 6', backendStatus: 'implemented', frontendStatus: 'implemented', viewPath: '/operations/club-management', backendArea: 'Controllers/Phase6/ClubManagement' },
+  { id: 49, slug: 'student-leadership', name: 'Student Leadership', phase: 'Phase 6', backendStatus: 'implemented', frontendStatus: 'implemented', viewPath: '/operations/student-leadership', backendArea: 'Controllers/Phase6/StudentLeadership' },
+  { id: 50, slug: 'awards-rewards', name: 'Awards & Rewards', phase: 'Phase 6', backendStatus: 'implemented', frontendStatus: 'implemented', viewPath: '/operations/awards-rewards', backendArea: 'Controllers/Phase6/Awards' }
 ];
 
 export const getModuleBySlug = (slug: string) =>

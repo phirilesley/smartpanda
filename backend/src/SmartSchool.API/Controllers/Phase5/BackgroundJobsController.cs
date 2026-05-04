@@ -1,3 +1,14 @@
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +24,8 @@ namespace SmartSchool.API.Controllers.Phase5;
 public class BackgroundJobsController(
     SystemMaintenanceJobs systemMaintenanceJobs,
     NotificationDispatchJobs notificationDispatchJobs,
+    ReportGenerationJobs reportGenerationJobs,
+    DataSyncJobs dataSyncJobs,
     SmartSchoolDbContext dbContext) : ControllerBase
 {
     [HttpGet("status")]
@@ -78,6 +91,64 @@ public class BackgroundJobsController(
         // Note: This would require job retry mechanism implementation
         return Ok(new { message = $"Job {jobId} retry queued." });
     }
+
+    // 🚀 Report Generation Job Endpoints
+    [HttpPost("reports/generate-student-report-cards")]
+    public async Task<ActionResult> GenerateStudentReportCards([FromBody] GenerateReportCardsRequest request)
+    {
+        await reportGenerationJobs.GenerateStudentReportCards(request.TermId, request.SchoolId);
+        return Ok(new { message = "Student report card generation queued." });
+    }
+
+    [HttpPost("reports/generate-fee-statements")]
+    public async Task<ActionResult> GenerateFeeStatements([FromBody] GenerateFeeStatementsRequest request)
+    {
+        await reportGenerationJobs.GenerateFeeStatements(request.SchoolId, request.Month);
+        return Ok(new { message = "Fee statement generation queued." });
+    }
+
+    [HttpPost("reports/cleanup-old")]
+    public async Task<ActionResult> CleanupOldReports()
+    {
+        await reportGenerationJobs.CleanupOldReports();
+        return Ok(new { message = "Old reports cleanup queued." });
+    }
+
+    // 🚀 Data Sync Job Endpoints
+    [HttpPost("sync/attendance")]
+    public async Task<ActionResult> SyncAttendance([FromBody] SyncAttendanceRequest request)
+    {
+        await dataSyncJobs.SyncStudentAttendance(request.SchoolId, request.Date);
+        return Ok(new { message = "Attendance sync queued." });
+    }
+
+    [HttpPost("sync/academic-data")]
+    public async Task<ActionResult> SyncAcademicData([FromBody] SyncAcademicDataRequest request)
+    {
+        await dataSyncJobs.SyncAcademicData(request.SchoolId, request.TermId);
+        return Ok(new { message = "Academic data sync queued." });
+    }
+
+    [HttpPost("sync/financial-data")]
+    public async Task<ActionResult> SyncFinancialData([FromBody] SyncFinancialDataRequest request)
+    {
+        await dataSyncJobs.SyncFinancialData(request.SchoolId, request.Month);
+        return Ok(new { message = "Financial data sync queued." });
+    }
+
+    [HttpPost("sync/full-tenant")]
+    public async Task<ActionResult> FullTenantSync([FromBody] FullTenantSyncRequest request)
+    {
+        await dataSyncJobs.FullTenantSync(request.TenantId);
+        return Ok(new { message = "Full tenant sync queued." });
+    }
+
+    [HttpPost("sync/cleanup-logs")]
+    public async Task<ActionResult> CleanupSyncLogs()
+    {
+        await dataSyncJobs.CleanupSyncLogs();
+        return Ok(new { message = "Sync logs cleanup queued." });
+    }
 }
 
 public sealed record BackgroundJobStatusResponse(int QueuedNotifications, int ActiveRefreshTokens, DateTime CheckedAtUtc);
@@ -85,3 +156,11 @@ public sealed record BackgroundJobStatusResponse(int QueuedNotifications, int Ac
 // Placeholder records for future implementation
 public sealed record BackgroundJobHistory(Guid JobId, string JobType, DateTime ExecutedAtUtc, string Status, string? Error);
 public sealed record RetryJobRequest(Guid JobId, string Reason);
+
+// 🚀 Background Job Request DTOs
+public sealed record GenerateReportCardsRequest(Guid TermId, Guid? SchoolId);
+public sealed record GenerateFeeStatementsRequest(Guid SchoolId, DateTime Month);
+public sealed record SyncAttendanceRequest(Guid SchoolId, DateTime Date);
+public sealed record SyncAcademicDataRequest(Guid SchoolId, Guid TermId);
+public sealed record SyncFinancialDataRequest(Guid SchoolId, DateTime Month);
+public sealed record FullTenantSyncRequest(Guid TenantId);

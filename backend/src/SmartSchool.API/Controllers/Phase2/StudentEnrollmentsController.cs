@@ -1,4 +1,14 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartSchool.API.Security;
@@ -12,12 +22,46 @@ namespace SmartSchool.API.Controllers.Phase2;
 
 [ApiController]
 [Route("api/students/enrollments")]
+[Route("api/student-enrollments")]
 [Authorize(Policy = PolicyNames.StudentsManage)]
 [Authorize(Policy = PolicyNames.SchoolAccess)]
 [ServiceFilter(typeof(SmartSchool.API.Validation.CrossEntityValidationFilter))]
 public class StudentEnrollmentsController(SmartSchoolDbContext dbContext) : ControllerBase
 {
-    [HttpGet("{studentId:guid}")]
+    [HttpGet]
+    public async Task<ActionResult<IReadOnlyList<StudentEnrollment>>> GetAll([FromQuery] Guid tenantId, [FromQuery] Guid schoolId, [FromQuery] Guid? studentId, CancellationToken cancellationToken)
+    {
+        if (tenantId == Guid.Empty || schoolId == Guid.Empty)
+        {
+            return BadRequest("tenantId and schoolId are required.");
+        }
+
+        if (!User.CanAccessTenant(tenantId))
+        {
+            return Forbid();
+        }
+
+        var query = dbContext.StudentEnrollments.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.SchoolId == schoolId);
+        if (studentId.HasValue && studentId.Value != Guid.Empty)
+        {
+            query = query.Where(x => x.StudentId == studentId.Value);
+        }
+
+        var items = await query.OrderByDescending(x => x.IsCurrent).ThenByDescending(x => x.CreatedAtUtc).ToListAsync(cancellationToken);
+        return Ok(items);
+    }
+
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<StudentEnrollment>> GetById(Guid id, CancellationToken cancellationToken)
+    {
+        var item = await dbContext.StudentEnrollments.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (item is null) return NotFound();
+        if (!User.CanAccessTenant(item.TenantId)) return Forbid();
+        return Ok(item);
+    }
+
+    [HttpGet("student/{studentId:guid}")]
     public async Task<ActionResult<IReadOnlyList<StudentEnrollment>>> GetByStudent(Guid studentId, CancellationToken cancellationToken)
     {
         var student = await dbContext.Students.AsNoTracking().FirstOrDefaultAsync(x => x.Id == studentId, cancellationToken);
@@ -70,7 +114,7 @@ public class StudentEnrollmentsController(SmartSchoolDbContext dbContext) : Cont
             cancellationToken);
 
         var streamExists = await dbContext.Streams.AsNoTracking().AnyAsync(x =>
-            x.Id == request.StreamId && x.TenantId == request.TenantId && x.SchoolId == request.SchoolId && x.GradeId == request.GradeId,
+            x.Id == request.StreamId && x.TenantId == request.TenantId && x.SchoolId == request.SchoolId,
             cancellationToken);
 
         if (!yearExists || !termExists || !gradeExists || !streamExists)
@@ -78,7 +122,7 @@ public class StudentEnrollmentsController(SmartSchoolDbContext dbContext) : Cont
             return BadRequest("Invalid academic references for tenant/school.");
         }
 
-        if (request.IsCurrent)
+        if (request.ResolveIsCurrent())
         {
             var currentItems = await dbContext.StudentEnrollments
                 .Where(x => x.TenantId == request.TenantId && x.SchoolId == request.SchoolId && x.StudentId == request.StudentId && x.IsCurrent)
@@ -101,7 +145,7 @@ public class StudentEnrollmentsController(SmartSchoolDbContext dbContext) : Cont
             GradeId = request.GradeId,
             StreamId = request.StreamId,
             Status = string.IsNullOrWhiteSpace(request.Status) ? "Active" : request.Status.Trim(),
-            IsCurrent = request.IsCurrent
+            IsCurrent = request.ResolveIsCurrent()
         };
 
         dbContext.StudentEnrollments.Add(enrollment);
@@ -142,7 +186,7 @@ public class StudentEnrollmentsController(SmartSchoolDbContext dbContext) : Cont
             cancellationToken);
 
         var streamExists = await dbContext.Streams.AsNoTracking().AnyAsync(x =>
-            x.Id == request.StreamId && x.TenantId == request.TenantId && x.SchoolId == request.SchoolId && x.GradeId == request.GradeId,
+            x.Id == request.StreamId && x.TenantId == request.TenantId && x.SchoolId == request.SchoolId,
             cancellationToken);
 
         if (!yearExists || !termExists || !gradeExists || !streamExists)
@@ -150,7 +194,7 @@ public class StudentEnrollmentsController(SmartSchoolDbContext dbContext) : Cont
             return BadRequest("Invalid academic references for tenant/school.");
         }
 
-        if (request.IsCurrent && !enrollment.IsCurrent)
+        if (request.ResolveIsCurrent() && !enrollment.IsCurrent)
         {
             var currentItems = await dbContext.StudentEnrollments
                 .Where(x => x.TenantId == request.TenantId && x.SchoolId == request.SchoolId && x.StudentId == enrollment.StudentId && x.IsCurrent)
@@ -168,7 +212,7 @@ public class StudentEnrollmentsController(SmartSchoolDbContext dbContext) : Cont
         enrollment.GradeId = request.GradeId;
         enrollment.StreamId = request.StreamId;
         enrollment.Status = string.IsNullOrWhiteSpace(request.Status) ? "Active" : request.Status.Trim();
-        enrollment.IsCurrent = request.IsCurrent;
+        enrollment.IsCurrent = request.ResolveIsCurrent();
         enrollment.UpdatedAtUtc = DateTime.UtcNow;
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -195,23 +239,33 @@ public class StudentEnrollmentsController(SmartSchoolDbContext dbContext) : Cont
     }
 }
 
-public sealed record CreateStudentEnrollmentRequest(
-    Guid TenantId,
-    Guid SchoolId,
-    Guid StudentId,
-    Guid AcademicYearId,
-    Guid TermId,
-    Guid GradeId,
-    Guid StreamId,
-    bool IsCurrent,
-    string? Status);
+public sealed class CreateStudentEnrollmentRequest
+{
+    public Guid TenantId { get; set; }
+    public Guid SchoolId { get; set; }
+    public Guid StudentId { get; set; }
+    public Guid AcademicYearId { get; set; }
+    public Guid TermId { get; set; }
+    public Guid GradeId { get; set; }
+    public Guid StreamId { get; set; }
+    public bool? IsCurrent { get; set; }
+    public DateTime? EnrollmentDate { get; set; }
+    public string? Status { get; set; }
 
-public sealed record UpdateStudentEnrollmentRequest(
-    Guid TenantId,
-    Guid SchoolId,
-    Guid AcademicYearId,
-    Guid TermId,
-    Guid GradeId,
-    Guid StreamId,
-    bool IsCurrent,
-    string? Status);
+    public bool ResolveIsCurrent() => IsCurrent ?? true;
+}
+
+public sealed class UpdateStudentEnrollmentRequest
+{
+    public Guid TenantId { get; set; }
+    public Guid SchoolId { get; set; }
+    public Guid AcademicYearId { get; set; }
+    public Guid TermId { get; set; }
+    public Guid GradeId { get; set; }
+    public Guid StreamId { get; set; }
+    public bool? IsCurrent { get; set; }
+    public DateTime? EnrollmentDate { get; set; }
+    public string? Status { get; set; }
+
+    public bool ResolveIsCurrent() => IsCurrent ?? true;
+}

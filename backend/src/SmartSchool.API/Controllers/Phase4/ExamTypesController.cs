@@ -1,4 +1,15 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartSchool.API.Security;
@@ -9,6 +20,7 @@ namespace SmartSchool.API.Controllers.Phase4;
 
 [ApiController]
 [Route("api/exams/types")]
+[Route("api/exams/exam-types")]
 [Authorize(Policy = PolicyNames.ExamsManage)]
 [Authorize(Policy = PolicyNames.SchoolAccess)]
 public class ExamTypesController(SmartSchoolDbContext dbContext) : ControllerBase
@@ -27,6 +39,15 @@ public class ExamTypesController(SmartSchoolDbContext dbContext) : ControllerBas
         return Ok(items);
     }
 
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<ExamType>> GetById(Guid id, CancellationToken cancellationToken)
+    {
+        var item = await dbContext.ExamTypes.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (item is null) return NotFound();
+        if (!User.CanAccessTenant(item.TenantId)) return Forbid();
+        return Ok(item);
+    }
+
     [HttpPost]
     public async Task<ActionResult<ExamType>> Create([FromBody] CreateExamTypeRequest request, CancellationToken cancellationToken)
     {
@@ -43,8 +64,8 @@ public class ExamTypesController(SmartSchoolDbContext dbContext) : ControllerBas
             TenantId = request.TenantId,
             SchoolId = request.SchoolId,
             Name = request.Name.Trim(),
-            WeightPercent = request.WeightPercent,
-            IsContinuousAssessment = request.IsContinuousAssessment
+            WeightPercent = request.ResolveWeightPercent(),
+            IsContinuousAssessment = request.ResolveIsContinuousAssessment()
         };
 
         dbContext.ExamTypes.Add(entity);
@@ -70,8 +91,8 @@ public class ExamTypesController(SmartSchoolDbContext dbContext) : ControllerBas
         if (nameConflict) return Conflict("Another exam type with this name already exists.");
 
         entity.Name = request.Name.Trim();
-        entity.WeightPercent = request.WeightPercent;
-        entity.IsContinuousAssessment = request.IsContinuousAssessment;
+        entity.WeightPercent = request.ResolveWeightPercent();
+        entity.IsContinuousAssessment = request.ResolveIsContinuousAssessment();
 
         await dbContext.SaveChangesAsync(cancellationToken);
         return Ok(entity);
@@ -96,5 +117,49 @@ public class ExamTypesController(SmartSchoolDbContext dbContext) : ControllerBas
     }
 }
 
-public sealed record CreateExamTypeRequest(Guid TenantId, Guid SchoolId, string Name, decimal WeightPercent, bool IsContinuousAssessment);
-public sealed record UpdateExamTypeRequest(Guid TenantId, string Name, decimal WeightPercent, bool IsContinuousAssessment);
+public sealed class CreateExamTypeRequest
+{
+    public Guid TenantId { get; set; }
+    public Guid SchoolId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public decimal? WeightPercent { get; set; }
+    public bool? IsContinuousAssessment { get; set; }
+    public string? Description { get; set; }
+    public decimal? MaxMarks { get; set; }
+    public decimal? PassingMarks { get; set; }
+
+    public decimal ResolveWeightPercent()
+    {
+        if (WeightPercent.HasValue) return WeightPercent.Value;
+        if (MaxMarks.GetValueOrDefault() > 0 && PassingMarks.HasValue)
+        {
+            return Math.Round(PassingMarks.Value / MaxMarks.Value * 100m, 2);
+        }
+        return 100m;
+    }
+
+    public bool ResolveIsContinuousAssessment() => IsContinuousAssessment ?? false;
+}
+
+public sealed class UpdateExamTypeRequest
+{
+    public Guid TenantId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public decimal? WeightPercent { get; set; }
+    public bool? IsContinuousAssessment { get; set; }
+    public string? Description { get; set; }
+    public decimal? MaxMarks { get; set; }
+    public decimal? PassingMarks { get; set; }
+
+    public decimal ResolveWeightPercent()
+    {
+        if (WeightPercent.HasValue) return WeightPercent.Value;
+        if (MaxMarks.GetValueOrDefault() > 0 && PassingMarks.HasValue)
+        {
+            return Math.Round(PassingMarks.Value / MaxMarks.Value * 100m, 2);
+        }
+        return 100m;
+    }
+
+    public bool ResolveIsContinuousAssessment() => IsContinuousAssessment ?? false;
+}

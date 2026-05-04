@@ -1,4 +1,15 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartSchool.API.Security;
@@ -9,19 +20,20 @@ namespace SmartSchool.API.Controllers.Phase1;
 
 [ApiController]
 [Route("api/academics/terms")]
+[Route("api/terms")]
 [Authorize(Policy = PolicyNames.AcademicsManage)]
 [Authorize(Policy = PolicyNames.SchoolAccess)]
 public class TermsController(SmartSchoolDbContext dbContext, ILogger<TermsController> logger) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<Term>>> GetAll([FromQuery] Guid tenantId, [FromQuery] Guid schoolId, [FromQuery] Guid academicYearId, CancellationToken cancellationToken)
+    public async Task<ActionResult<IReadOnlyList<Term>>> GetAll([FromQuery] Guid tenantId, [FromQuery] Guid schoolId, [FromQuery] Guid? academicYearId, CancellationToken cancellationToken)
     {
         logger.LogInformation("Getting terms for tenant {TenantId}, school {SchoolId}, academic year {AcademicYearId}", tenantId, schoolId, academicYearId);
 
-        if (tenantId == Guid.Empty || schoolId == Guid.Empty || academicYearId == Guid.Empty)
+        if (tenantId == Guid.Empty || schoolId == Guid.Empty)
         {
             logger.LogWarning("Invalid parameters: tenantId={TenantId}, schoolId={SchoolId}, academicYearId={AcademicYearId}", tenantId, schoolId, academicYearId);
-            return BadRequest("tenantId, schoolId and academicYearId are required.");
+            return BadRequest("tenantId and schoolId are required.");
         }
 
         if (!User.CanAccessTenant(tenantId))
@@ -32,10 +44,14 @@ public class TermsController(SmartSchoolDbContext dbContext, ILogger<TermsContro
 
         try
         {
-            var items = await dbContext.Terms.AsNoTracking()
-                .Where(x => x.TenantId == tenantId && x.SchoolId == schoolId && x.AcademicYearId == academicYearId)
-                .OrderBy(x => x.TermNumber)
-                .ToListAsync(cancellationToken);
+            var query = dbContext.Terms.AsNoTracking()
+                .Where(x => x.TenantId == tenantId && x.SchoolId == schoolId);
+            if (academicYearId.HasValue && academicYearId.Value != Guid.Empty)
+            {
+                query = query.Where(x => x.AcademicYearId == academicYearId.Value);
+            }
+
+            var items = await query.OrderBy(x => x.TermNumber).ToListAsync(cancellationToken);
 
             logger.LogInformation("Retrieved {Count} terms for tenant {TenantId}, school {SchoolId}", items.Count, tenantId, schoolId);
             return Ok(items);
@@ -106,7 +122,7 @@ public class TermsController(SmartSchoolDbContext dbContext, ILogger<TermsContro
             logger.LogInformation("Successfully created term {TermId} ({TermName}) for tenant {TenantId}", 
                 term.Id, term.Name, term.TenantId);
 
-            return CreatedAtAction(nameof(GetById), new { id = term.Id }, term);
+            return Ok(term);
         }
         catch (Exception ex)
         {

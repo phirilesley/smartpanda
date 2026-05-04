@@ -1,4 +1,15 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartSchool.API.Security;
@@ -79,6 +90,19 @@ public class CommunicationController(SmartSchoolDbContext dbContext) : Controlle
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return Ok(thread);
+    }
+
+    [HttpGet("threads")]
+    public async Task<ActionResult<IReadOnlyList<MessageThread>>> GetThreads([FromQuery] Guid tenantId, [FromQuery] Guid schoolId, CancellationToken cancellationToken)
+    {
+        if (tenantId == Guid.Empty || schoolId == Guid.Empty) return BadRequest("tenantId and schoolId are required.");
+        if (!User.CanAccessTenant(tenantId)) return Forbid();
+
+        var items = await dbContext.MessageThreads.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.SchoolId == schoolId)
+            .OrderByDescending(x => x.CreatedAtUtc)
+            .ToListAsync(cancellationToken);
+        return Ok(items);
     }
 
     [HttpGet("threads/{threadId:guid}/messages")]

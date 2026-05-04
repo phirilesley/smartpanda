@@ -1,4 +1,15 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartSchool.API.Security;
@@ -74,6 +85,7 @@ public class SystemSettingsController(SmartSchoolDbContext dbContext) : Controll
     }
 
     [HttpGet("master-data")]
+    [HttpGet("/api/system/master-data")]
     public async Task<ActionResult<IReadOnlyList<MasterDataItem>>> GetMasterData([FromQuery] Guid tenantId, [FromQuery] Guid schoolId, [FromQuery] string dataType, CancellationToken cancellationToken)
     {
         if (tenantId == Guid.Empty || schoolId == Guid.Empty || string.IsNullOrWhiteSpace(dataType))
@@ -96,6 +108,7 @@ public class SystemSettingsController(SmartSchoolDbContext dbContext) : Controll
     }
 
     [HttpPost("master-data")]
+    [HttpPost("/api/system/master-data")]
     public async Task<ActionResult<MasterDataItem>> UpsertMasterData([FromBody] UpsertMasterDataItemRequest request, CancellationToken cancellationToken)
     {
         if (!User.CanAccessTenant(request.TenantId))
@@ -160,6 +173,7 @@ public class SystemSettingsController(SmartSchoolDbContext dbContext) : Controll
     }
 
     [HttpGet("master-data/{id:guid}")]
+    [HttpGet("/api/system/master-data/{id:guid}")]
     public async Task<ActionResult<MasterDataItem>> GetMasterDataItem(Guid id, CancellationToken cancellationToken)
     {
         var item = await dbContext.MasterDataItems.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
@@ -171,6 +185,7 @@ public class SystemSettingsController(SmartSchoolDbContext dbContext) : Controll
     }
 
     [HttpDelete("master-data/{id:guid}")]
+    [HttpDelete("/api/system/master-data/{id:guid}")]
     public async Task<IActionResult> DeleteMasterDataItem(Guid id, CancellationToken cancellationToken)
     {
         var item = await dbContext.MasterDataItems.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);

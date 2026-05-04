@@ -1,4 +1,15 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartSchool.API.Security;
@@ -9,6 +20,7 @@ namespace SmartSchool.API.Controllers.Phase1;
 
 [ApiController]
 [Route("api/platform/schools")]
+[Route("api/schools")]
 [Authorize(Policy = PolicyNames.SchoolsManage)]
 public class SchoolsController(SmartSchoolDbContext dbContext) : ControllerBase
 {
@@ -62,8 +74,8 @@ public class SchoolsController(SmartSchoolDbContext dbContext) : ControllerBase
             TenantId = request.TenantId,
             Name = request.Name.Trim(),
             Code = request.Code.Trim().ToUpperInvariant(),
-            Email = request.Email.Trim(),
-            Phone = request.Phone.Trim(),
+            Email = request.ResolveEmail().Trim(),
+            Phone = request.ResolvePhone().Trim(),
             Address = request.Address.Trim(),
             IsActive = true
         };
@@ -71,7 +83,7 @@ public class SchoolsController(SmartSchoolDbContext dbContext) : ControllerBase
         dbContext.Schools.Add(school);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return CreatedAtAction(nameof(GetById), new { id = school.Id }, school);
+        return Ok(school);
     }
 
     [HttpGet("{id:guid}")]
@@ -116,8 +128,8 @@ public class SchoolsController(SmartSchoolDbContext dbContext) : ControllerBase
 
         school.Name = request.Name.Trim();
         school.Code = code;
-        school.Email = request.Email.Trim();
-        school.Phone = request.Phone.Trim();
+        school.Email = request.ResolveEmail().Trim();
+        school.Phone = request.ResolvePhone().Trim();
         school.Address = request.Address.Trim();
         school.IsActive = request.IsActive;
         school.UpdatedAtUtc = DateTime.UtcNow;
@@ -149,18 +161,30 @@ public class SchoolsController(SmartSchoolDbContext dbContext) : ControllerBase
     }
 }
 
-public sealed record CreateSchoolRequest(
-    Guid TenantId,
-    string Name,
-    string Code,
-    string Email,
-    string Phone,
-    string Address);
+public sealed class CreateSchoolRequest
+{
+    public Guid TenantId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Code { get; set; } = string.Empty;
+    public string? Email { get; set; }
+    public string? ContactEmail { get; set; }
+    public string? Phone { get; set; }
+    public string Address { get; set; } = string.Empty;
 
-public sealed record UpdateSchoolRequest(
-    string Name,
-    string Code,
-    string Email,
-    string Phone,
-    string Address,
-    bool IsActive);
+    public string ResolveEmail() => string.IsNullOrWhiteSpace(Email) ? (ContactEmail ?? string.Empty) : Email;
+    public string ResolvePhone() => Phone ?? string.Empty;
+}
+
+public sealed class UpdateSchoolRequest
+{
+    public string Name { get; set; } = string.Empty;
+    public string Code { get; set; } = string.Empty;
+    public string? Email { get; set; }
+    public string? ContactEmail { get; set; }
+    public string? Phone { get; set; }
+    public string Address { get; set; } = string.Empty;
+    public bool IsActive { get; set; }
+
+    public string ResolveEmail() => string.IsNullOrWhiteSpace(Email) ? (ContactEmail ?? string.Empty) : Email;
+    public string ResolvePhone() => Phone ?? string.Empty;
+}

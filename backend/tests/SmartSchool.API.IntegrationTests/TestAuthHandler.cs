@@ -25,11 +25,37 @@ internal sealed class TestAuthHandler(
         var roles = (Request.Headers["X-Test-Roles"].FirstOrDefault() ?? RoleCodes.TenantOwner)
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         var permissions = (Request.Headers["X-Test-Permissions"].FirstOrDefault() ?? string.Join(',',
+                PermissionCodes.PlatformManage,
+                PermissionCodes.SchoolsManage,
+                PermissionCodes.AcademicsManage,
+                PermissionCodes.StudentsManage,
+                PermissionCodes.FinanceManage,
+                PermissionCodes.ExamsManage,
                 PermissionCodes.OperationsManage,
+                PermissionCodes.SecurityManage,
                 PermissionCodes.FeatureFlagsManage,
                 PermissionCodes.PortalParentAccess,
                 PermissionCodes.PortalStudentAccess,
-                PermissionCodes.PortalStaffAccess))
+                PermissionCodes.PortalStaffAccess,
+                PermissionCodes.EventsManage,
+                PermissionCodes.EventsView,
+                PermissionCodes.EventsCoordinate,
+                PermissionCodes.TransportManage,
+                PermissionCodes.TransportView,
+                PermissionCodes.TransportDrive,
+                PermissionCodes.TransportAssign,
+                PermissionCodes.HostelsManage,
+                PermissionCodes.HostelsView,
+                PermissionCodes.HostelsMatron,
+                PermissionCodes.HostelsStudent,
+                PermissionCodes.HealthManage,
+                PermissionCodes.HealthView,
+                PermissionCodes.HealthNurse,
+                PermissionCodes.HealthStudent,
+                PermissionCodes.ClinicManage,
+                PermissionCodes.ClinicView,
+                PermissionCodes.ClinicDoctor,
+                PermissionCodes.ClinicPatient))
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
         var claims = new List<Claim>

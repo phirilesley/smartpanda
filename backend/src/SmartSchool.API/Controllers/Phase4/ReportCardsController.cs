@@ -1,4 +1,15 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartSchool.API.Security;
@@ -26,6 +37,15 @@ public class ReportCardsController(SmartSchoolDbContext dbContext) : ControllerB
 
         var items = await query.OrderBy(x => x.GradeId).ThenBy(x => x.PositionInClass).ToListAsync(cancellationToken);
         return Ok(items);
+    }
+
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<ReportCard>> GetById(Guid id, CancellationToken cancellationToken)
+    {
+        var item = await dbContext.ReportCards.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (item is null) return NotFound();
+        if (!User.CanAccessTenant(item.TenantId)) return Forbid();
+        return Ok(item);
     }
 
     [HttpPost("generate-term")]

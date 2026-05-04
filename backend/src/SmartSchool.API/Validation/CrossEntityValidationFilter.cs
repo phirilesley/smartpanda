@@ -1,188 +1,100 @@
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using SmartSchool.API.Validation;
 
 namespace SmartSchool.API.Validation;
 
-public class CrossEntityValidationFilter : IAsyncActionFilter
+public class CrossEntityValidationFilter(CrossEntityValidationService validationService) : IAsyncActionFilter
 {
-    private readonly CrossEntityValidationService _validationService;
-
-    public CrossEntityValidationFilter(CrossEntityValidationService validationService)
-    {
-        _validationService = validationService;
-    }
-
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
         var controllerName = context.Controller.GetType().Name;
         var actionName = context.ActionDescriptor.RouteValues["action"]?.ToString();
-        var arguments = context.ActionArguments;
+        var request = context.ActionArguments.TryGetValue("request", out var value) ? value : null;
 
-        try
+        CrossEntityValidationService.ValidationResult result = new() { IsValid = true };
+
+        if (request is not null)
         {
-            var validationResult = await ValidateRequest(controllerName, actionName, arguments);
-            
-            if (!validationResult.IsValid)
+            result = (controllerName, actionName) switch
             {
-                context.Result = new BadRequestObjectResult(new
-                {
-                    success = false,
-                    errors = validationResult.Errors,
-                    warnings = validationResult.Warnings,
-                    message = "Cross-entity validation failed"
-                });
-                return;
-            }
-
-            if (validationResult.Warnings.Any())
-            {
-                // Add warnings to HttpContext for controllers to access if needed
-                context.HttpContext.Items["ValidationWarnings"] = validationResult.Warnings;
-            }
+                ("StudentEnrollmentsController", "Create") => await ValidateStudentEnrollment(request),
+                ("StudentInvoicesController", "Create") => await ValidateInvoice(request),
+                ("PaymentsController", "Create") => await ValidatePayment(request),
+                _ => result
+            };
         }
-        catch (Exception ex)
+
+        if (!result.IsValid)
         {
-            // Log the exception but don't fail the request
-            // Validation should not break the flow, only provide warnings/errors
-            context.HttpContext.Items["ValidationError"] = ex.Message;
+            context.Result = new BadRequestObjectResult(new
+            {
+                success = false,
+                errors = result.Errors,
+                warnings = result.Warnings,
+                message = "Cross-entity validation failed"
+            });
+            return;
+        }
+
+        if (result.Warnings.Count > 0)
+        {
+            context.HttpContext.Items["ValidationWarnings"] = result.Warnings;
         }
 
         await next();
     }
 
-    private async Task<CrossEntityValidationService.ValidationResult> ValidateRequest(string controllerName, string? actionName, IDictionary<string, object> arguments)
+    private async Task<CrossEntityValidationService.ValidationResult> ValidateStudentEnrollment(object request)
     {
-        return (controllerName, actionName) switch
-        {
-            ("StudentEnrollmentsController", "Create") => await ValidateStudentEnrollment(arguments),
-            ("StudentInvoicesController", "Create") => await ValidateInvoiceGeneration(arguments),
-            ("PaymentsController", "Create") => await ValidatePaymentProcessing(arguments),
-            ("EventsController", "RegisterParticipants") => await ValidateEventRegistration(arguments),
-            ("TransportController", "CreateAssignment") => await ValidateTransportAssignment(arguments),
-            ("HostelsController", "CreateAllocation") => await ValidateHostelAllocation(arguments),
-            ("HealthController", "CreateProfile") => await ValidateHealthRecordCreation(arguments),
-            ("StudentMarksController", "Create") => await ValidateGradeAssignment(arguments),
-            _ => new CrossEntityValidationService.ValidationResult { IsValid = true }
-        };
+        var studentId = GetGuid(request, "StudentId");
+        var gradeId = GetGuid(request, "GradeId");
+        var yearId = GetGuid(request, "AcademicYearId");
+        return studentId.HasValue && gradeId.HasValue && yearId.HasValue
+            ? await validationService.ValidateStudentEnrollment(studentId.Value, gradeId.Value, yearId.Value)
+            : new CrossEntityValidationService.ValidationResult { IsValid = true };
     }
 
-    private async Task<CrossEntityValidationService.ValidationResult> ValidateStudentEnrollment(IDictionary<string, object> arguments)
+    private async Task<CrossEntityValidationService.ValidationResult> ValidateInvoice(object request)
     {
-        if (arguments.TryGetValue("request", out var requestObj) && 
-            requestObj is CreateStudentEnrollmentRequest request)
-        {
-            return await _validationService.ValidateStudentEnrollment(
-                request.StudentId, 
-                request.ClassId, 
-                request.AcademicYearId);
-        }
-
-        return new CrossEntityValidationService.ValidationResult { IsValid = true };
+        var studentId = GetGuid(request, "StudentId");
+        var yearId = GetGuid(request, "AcademicYearId");
+        var termId = GetGuid(request, "TermId");
+        return studentId.HasValue && yearId.HasValue && termId.HasValue
+            ? await validationService.ValidateStudentInvoiceGeneration(studentId.Value, yearId.Value, termId.Value)
+            : new CrossEntityValidationService.ValidationResult { IsValid = true };
     }
 
-    private async Task<CrossEntityValidationService.ValidationResult> ValidateInvoiceGeneration(IDictionary<string, object> arguments)
+    private async Task<CrossEntityValidationService.ValidationResult> ValidatePayment(object request)
     {
-        if (arguments.TryGetValue("request", out var requestObj) && 
-            requestObj is CreateStudentInvoiceRequest request)
-        {
-            return await _validationService.ValidateStudentInvoiceGeneration(
-                request.StudentId, 
-                request.AcademicYearId, 
-                request.TermId);
-        }
-
-        return new CrossEntityValidationService.ValidationResult { IsValid = true };
+        var invoiceId = GetGuid(request, "InvoiceId");
+        var amount = GetDecimal(request, "Amount");
+        return invoiceId.HasValue && amount.HasValue
+            ? await validationService.ValidatePaymentProcessing(invoiceId.Value, amount.Value)
+            : new CrossEntityValidationService.ValidationResult { IsValid = true };
     }
 
-    private async Task<CrossEntityValidationService.ValidationResult> ValidatePaymentProcessing(IDictionary<string, object> arguments)
+    private static Guid? GetGuid(object obj, string property)
     {
-        if (arguments.TryGetValue("request", out var requestObj) && 
-            requestObj is CreatePaymentRequest request)
-        {
-            return await _validationService.ValidatePaymentProcessing(
-                request.InvoiceId, 
-                request.Amount);
-        }
-
-        return new CrossEntityValidationService.ValidationResult { IsValid = true };
+        var prop = obj.GetType().GetProperty(property);
+        if (prop?.GetValue(obj) is Guid guid && guid != Guid.Empty) return guid;
+        return null;
     }
 
-    private async Task<CrossEntityValidationService.ValidationResult> ValidateEventRegistration(IDictionary<string, object> arguments)
+    private static decimal? GetDecimal(object obj, string property)
     {
-        if (arguments.TryGetValue("request", out var requestObj) && 
-            requestObj is RegisterEventParticipantsRequest request)
-        {
-            var participantIds = request.Participants
-                .Where(p => p.StudentId.HasValue)
-                .Select(p => p.StudentId!.Value)
-                .ToList();
-
-            if (participantIds.Any() && arguments.TryGetValue("eventId", out var eventIdObj) && eventIdObj is Guid eventId)
-            {
-                return await _validationService.ValidateEventRegistration(eventId, participantIds);
-            }
-        }
-
-        return new CrossEntityValidationService.ValidationResult { IsValid = true };
-    }
-
-    private async Task<CrossEntityValidationService.ValidationResult> ValidateTransportAssignment(IDictionary<string, object> arguments)
-    {
-        if (arguments.TryGetValue("request", out var requestObj) && 
-            requestObj is CreateTransportStudentAssignmentRequest request)
-        {
-            return await _validationService.ValidateTransportAssignment(
-                request.StudentId,
-                request.TransportRouteId,
-                request.PickupStopId,
-                request.DropoffStopId);
-        }
-
-        return new CrossEntityValidationService.ValidationResult { IsValid = true };
-    }
-
-    private async Task<CrossEntityValidationService.ValidationResult> ValidateHostelAllocation(IDictionary<string, object> arguments)
-    {
-        if (arguments.TryGetValue("request", out var requestObj) && 
-            requestObj is CreateHostelAllocationRequest request)
-        {
-            return await _validationService.ValidateHostelAllocation(
-                request.StudentId,
-                request.HostelBedId,
-                request.StartDate,
-                request.EndDate);
-        }
-
-        return new CrossEntityValidationService.ValidationResult { IsValid = true };
-    }
-
-    private async Task<CrossEntityValidationService.ValidationResult> ValidateHealthRecordCreation(IDictionary<string, object> arguments)
-    {
-        if (arguments.TryGetValue("request", out var requestObj) && 
-            requestObj is CreateHealthProfileRequest request)
-        {
-            if (request.StudentId.HasValue)
-            {
-                return await _validationService.ValidateHealthRecordCreation(request.StudentId.Value);
-            }
-        }
-
-        return new CrossEntityValidationService.ValidationResult { IsValid = true };
-    }
-
-    private async Task<CrossEntityValidationService.ValidationResult> ValidateGradeAssignment(IDictionary<string, object> arguments)
-    {
-        if (arguments.TryGetValue("request", out var requestObj) && 
-            requestObj is CreateStudentMarkRequest request)
-        {
-            return await _validationService.ValidateGradeAssignment(
-                request.StudentId,
-                request.SubjectId,
-                request.Score,
-                request.ExamSessionId);
-        }
-
-        return new CrossEntityValidationService.ValidationResult { IsValid = true };
+        var prop = obj.GetType().GetProperty(property);
+        if (prop?.GetValue(obj) is decimal d) return d;
+        return null;
     }
 }

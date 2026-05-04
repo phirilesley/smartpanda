@@ -1,9 +1,20 @@
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using SmartSchool.API.Data;
 using SmartSchool.API.Models;
 using SmartSchool.API.Services;
+using SmartSchool.Persistence.Data;
 using System.Security.Claims;
 
 namespace SmartSchool.API.Controllers.Phase1
@@ -13,11 +24,11 @@ namespace SmartSchool.API.Controllers.Phase1
     [Authorize]
     public class AlertRulesController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly SmartSchoolDbContext _context;
         private readonly IAlertService _alertService;
         private readonly ILogger<AlertRulesController> _logger;
 
-        public AlertRulesController(AppDbContext context, IAlertService alertService, ILogger<AlertRulesController> logger)
+        public AlertRulesController(SmartSchoolDbContext context, IAlertService alertService, ILogger<AlertRulesController> logger)
         {
             _context = context;
             _alertService = alertService;
@@ -220,7 +231,7 @@ namespace SmartSchool.API.Controllers.Phase1
         private async Task<double> GetOutstandingPaymentsMetric(Guid tenantId, CancellationToken cancellationToken)
         {
             var outstanding = await _context.StudentInvoices
-                .Where(i => i.TenantId == tenantId && !i.IsPaid)
+                .Where(i => i.TenantId == tenantId && !string.Equals(i.Status, "Paid", StringComparison.OrdinalIgnoreCase))
                 .SumAsync(i => (decimal?)i.TotalAmount, cancellationToken) ?? 0m;
             return (double)outstanding;
         }
@@ -228,16 +239,17 @@ namespace SmartSchool.API.Controllers.Phase1
         private async Task<double> GetPaymentRateMetric(Guid tenantId, CancellationToken cancellationToken)
         {
             var totalInvoices = await _context.StudentInvoices.CountAsync(i => i.TenantId == tenantId, cancellationToken);
-            var paidInvoices = await _context.StudentInvoices.CountAsync(i => i.TenantId == tenantId && i.IsPaid, cancellationToken);
+            var paidInvoices = await _context.StudentInvoices.CountAsync(i =>
+                i.TenantId == tenantId && string.Equals(i.Status, "Paid", StringComparison.OrdinalIgnoreCase), cancellationToken);
             return totalInvoices > 0 ? (double)paidInvoices / totalInvoices * 100 : 0;
         }
 
         private async Task<double> GetFailedLoginsMetric(Guid tenantId, CancellationToken cancellationToken)
         {
-            return await _context.UserSessions
-                .CountAsync(s => s.TenantId == tenantId && 
-                                s.CreatedAtUtc >= DateTime.UtcNow.AddHours(-24) && 
-                                s.IsActive == false, cancellationToken);
+            return await _context.AuditLogs
+                .CountAsync(s => s.TenantId == tenantId &&
+                                s.CreatedAtUtc >= DateTime.UtcNow.AddHours(-24) &&
+                                s.Action == "Auth.LoginFailed", cancellationToken);
         }
 
         private bool ShouldTriggerAlert(double currentValue, AlertRule rule)

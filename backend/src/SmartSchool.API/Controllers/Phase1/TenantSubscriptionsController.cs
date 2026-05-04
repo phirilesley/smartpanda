@@ -1,3 +1,14 @@
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +30,7 @@ public class TenantSubscriptionsController(SmartSchoolDbContext dbContext) : Con
         var query = dbContext.TenantSubscriptions.AsNoTracking().Where(x => !x.IsDeleted).AsQueryable();
         if (tenantId.HasValue && tenantId.Value != Guid.Empty)
         {
+            if (!User.CanAccessTenant(tenantId.Value)) return Forbid();
             query = query.Where(x => x.TenantId == tenantId.Value);
         }
 
@@ -26,9 +38,25 @@ public class TenantSubscriptionsController(SmartSchoolDbContext dbContext) : Con
         return Ok(items);
     }
 
+    [HttpGet("{subscriptionId:guid}")]
+    public async Task<ActionResult<TenantSubscription>> GetSubscription(Guid subscriptionId, CancellationToken cancellationToken)
+    {
+        var item = await dbContext.TenantSubscriptions.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == subscriptionId && !x.IsDeleted, cancellationToken);
+        if (item is null)
+        {
+            if (!User.CanAccessTenant(subscriptionId)) return Forbid();
+            return NotFound();
+        }
+        if (!User.CanAccessTenant(item.TenantId)) return Forbid();
+        return Ok(item);
+    }
+
     [HttpPost]
     public async Task<ActionResult<TenantSubscription>> CreateSubscription([FromBody] CreateTenantSubscriptionRequest request, CancellationToken cancellationToken)
     {
+        if (!User.CanAccessTenant(request.TenantId)) return Forbid();
+
         var tenantExists = await dbContext.Tenants.AsNoTracking().AnyAsync(x => x.Id == request.TenantId, cancellationToken);
         var planExists = await dbContext.SubscriptionPlans.AsNoTracking().AnyAsync(x => x.Id == request.SubscriptionPlanId, cancellationToken);
         if (!tenantExists || !planExists) return BadRequest("Tenant or subscription plan not found.");
@@ -53,6 +81,7 @@ public class TenantSubscriptionsController(SmartSchoolDbContext dbContext) : Con
     {
         var entity = await dbContext.TenantSubscriptions.FirstOrDefaultAsync(x => x.Id == subscriptionId && !x.IsDeleted, cancellationToken);
         if (entity is null) return NotFound();
+        if (!User.CanAccessTenant(entity.TenantId)) return Forbid();
 
         var planExists = await dbContext.SubscriptionPlans.AsNoTracking().AnyAsync(x => x.Id == request.SubscriptionPlanId && !x.IsDeleted, cancellationToken);
         if (!planExists) return BadRequest("Subscription plan not found.");
@@ -73,6 +102,7 @@ public class TenantSubscriptionsController(SmartSchoolDbContext dbContext) : Con
     {
         var entity = await dbContext.TenantSubscriptions.FirstOrDefaultAsync(x => x.Id == subscriptionId && !x.IsDeleted, cancellationToken);
         if (entity is null) return NotFound();
+        if (!User.CanAccessTenant(entity.TenantId)) return Forbid();
 
         entity.IsDeleted = true;
         entity.DeletedAtUtc = DateTime.UtcNow;

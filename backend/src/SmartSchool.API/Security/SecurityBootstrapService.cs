@@ -1,4 +1,15 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SmartSchool.Domain.Modules.Security;
 using SmartSchool.Persistence.Data;
@@ -26,7 +37,30 @@ public class SecurityBootstrapService(RoleManager<AppRole> roleManager, SmartSch
             PermissionCodes.FeatureFlagsManage,
             PermissionCodes.PortalParentAccess,
             PermissionCodes.PortalStudentAccess,
-            PermissionCodes.PortalStaffAccess
+            PermissionCodes.PortalStaffAccess,
+            PermissionCodes.EventsManage,
+            PermissionCodes.EventsView,
+            PermissionCodes.EventsCoordinate,
+            PermissionCodes.TransportManage,
+            PermissionCodes.TransportView,
+            PermissionCodes.TransportDrive,
+            PermissionCodes.TransportAssign,
+            PermissionCodes.HostelsManage,
+            PermissionCodes.HostelsView,
+            PermissionCodes.HostelsMatron,
+            PermissionCodes.HostelsStudent,
+            PermissionCodes.HealthManage,
+            PermissionCodes.HealthView,
+            PermissionCodes.HealthNurse,
+            PermissionCodes.HealthStudent,
+            PermissionCodes.ClinicManage,
+            PermissionCodes.ClinicView,
+            PermissionCodes.ClinicDoctor,
+            PermissionCodes.ClinicPatient,
+            PermissionCodes.SportsManage,
+            PermissionCodes.AwardsManage,
+            PermissionCodes.ClubsManage,
+            PermissionCodes.LeadershipManage
         };
 
         foreach (var code in permissions)
@@ -54,7 +88,30 @@ public class SecurityBootstrapService(RoleManager<AppRole> roleManager, SmartSch
                 PermissionCodes.FeatureFlagsManage,
                 PermissionCodes.PortalParentAccess,
                 PermissionCodes.PortalStudentAccess,
-                PermissionCodes.PortalStaffAccess
+                PermissionCodes.PortalStaffAccess,
+                PermissionCodes.EventsManage,
+                PermissionCodes.EventsView,
+                PermissionCodes.EventsCoordinate,
+                PermissionCodes.TransportManage,
+                PermissionCodes.TransportView,
+                PermissionCodes.TransportDrive,
+                PermissionCodes.TransportAssign,
+                PermissionCodes.HostelsManage,
+                PermissionCodes.HostelsView,
+                PermissionCodes.HostelsMatron,
+                PermissionCodes.HostelsStudent,
+                PermissionCodes.HealthManage,
+                PermissionCodes.HealthView,
+                PermissionCodes.HealthNurse,
+                PermissionCodes.HealthStudent,
+                PermissionCodes.ClinicManage,
+                PermissionCodes.ClinicView,
+                PermissionCodes.ClinicDoctor,
+                PermissionCodes.ClinicPatient,
+                PermissionCodes.SportsManage,
+                PermissionCodes.AwardsManage,
+                PermissionCodes.ClubsManage,
+                PermissionCodes.LeadershipManage
             ],
             [RoleCodes.TenantOwner] =
             [
@@ -67,7 +124,30 @@ public class SecurityBootstrapService(RoleManager<AppRole> roleManager, SmartSch
                 PermissionCodes.FeatureFlagsManage,
                 PermissionCodes.PortalParentAccess,
                 PermissionCodes.PortalStudentAccess,
-                PermissionCodes.PortalStaffAccess
+                PermissionCodes.PortalStaffAccess,
+                PermissionCodes.EventsManage,
+                PermissionCodes.EventsView,
+                PermissionCodes.EventsCoordinate,
+                PermissionCodes.TransportManage,
+                PermissionCodes.TransportView,
+                PermissionCodes.TransportDrive,
+                PermissionCodes.TransportAssign,
+                PermissionCodes.HostelsManage,
+                PermissionCodes.HostelsView,
+                PermissionCodes.HostelsMatron,
+                PermissionCodes.HostelsStudent,
+                PermissionCodes.HealthManage,
+                PermissionCodes.HealthView,
+                PermissionCodes.HealthNurse,
+                PermissionCodes.HealthStudent,
+                PermissionCodes.ClinicManage,
+                PermissionCodes.ClinicView,
+                PermissionCodes.ClinicDoctor,
+                PermissionCodes.ClinicPatient,
+                PermissionCodes.SportsManage,
+                PermissionCodes.AwardsManage,
+                PermissionCodes.ClubsManage,
+                PermissionCodes.LeadershipManage
             ],
             [RoleCodes.SchoolAdmin] =
             [
@@ -78,7 +158,30 @@ public class SecurityBootstrapService(RoleManager<AppRole> roleManager, SmartSch
                 PermissionCodes.OperationsManage,
                 PermissionCodes.PortalParentAccess,
                 PermissionCodes.PortalStudentAccess,
-                PermissionCodes.PortalStaffAccess
+                PermissionCodes.PortalStaffAccess,
+                PermissionCodes.EventsManage,
+                PermissionCodes.EventsView,
+                PermissionCodes.EventsCoordinate,
+                PermissionCodes.TransportManage,
+                PermissionCodes.TransportView,
+                PermissionCodes.TransportDrive,
+                PermissionCodes.TransportAssign,
+                PermissionCodes.HostelsManage,
+                PermissionCodes.HostelsView,
+                PermissionCodes.HostelsMatron,
+                PermissionCodes.HostelsStudent,
+                PermissionCodes.HealthManage,
+                PermissionCodes.HealthView,
+                PermissionCodes.HealthNurse,
+                PermissionCodes.HealthStudent,
+                PermissionCodes.ClinicManage,
+                PermissionCodes.ClinicView,
+                PermissionCodes.ClinicDoctor,
+                PermissionCodes.ClinicPatient,
+                PermissionCodes.SportsManage,
+                PermissionCodes.AwardsManage,
+                PermissionCodes.ClubsManage,
+                PermissionCodes.LeadershipManage
             ]
         };
 

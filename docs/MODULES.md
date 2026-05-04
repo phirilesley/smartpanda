@@ -1,4 +1,4 @@
-﻿# Smart Panda Enterprise Modules Guide
+# Smart Panda Enterprise Modules Guide
 
 This is the master module checklist for the Zimbabwe school SaaS.
 
@@ -7,15 +7,15 @@ This is the master module checklist for the Zimbabwe school SaaS.
 - `API Started`: Initial controllers/endpoints already started.
 - `Planned`: Defined here, implementation pending.
 
-## Full Enterprise Modules (46)
+## Full Enterprise Modules (50)
 
 | # | Module | Scope Guidance | Status | Target Phase |
 |---|---|---|---|---|
 | 1 | Platform & Subscription Management | Tenant onboarding, plans, billing lifecycle, activation/suspension | Template Ready, API Started | Phase 1 |
-| 2 | Multi-Tenant & School Management | Tenant -> School hierarchy, school profile, branch/campus setup | Template Ready, API Started | Phase 1 |
+| 2 | Multi-Tenant & School Management | Tenant -> school hierarchy, school profile, branch/campus setup | Template Ready, API Started | Phase 1 |
 | 3 | Identity, Auth, Roles, Permissions | Identity users, JWT/refresh tokens, RBAC, permission matrix | Template Ready, API Started | Phase 1 |
 | 4 | User-School Access Control | Restrict users to assigned schools, approval scopes | Template Ready, API Started | Phase 1 |
-| 5 | Academic Setup (Years, Terms, Grades, Streams, Subjects) | 3-term academic model setup and controls | Template Ready, API Started (AcademicYear) | Phase 1 |
+| 5 | Academic Setup (Years, Terms, Grades, Streams, Subjects) | 3-term academic model setup and controls | Template Ready, API Started | Phase 1 |
 | 6 | Student Management | Student profile registration, imports, status transitions | Template Ready, API Started | Phase 2 |
 | 7 | Guardian/Parent Linking | Parent/guardian contacts, relationships, primary contact rules | Template Ready, API Started | Phase 2 |
 | 8 | Student Enrollment & Academic History | Source of truth for grade/stream/term/year placement | Template Ready, API Started | Phase 2 |
@@ -35,7 +35,7 @@ This is the master module checklist for the Zimbabwe school SaaS.
 | 22 | Question Paper Bank | Categorized papers, access control, download history | Template Ready, API Started | Phase 6 |
 | 23 | Memo & Approval Workflow | Multi-level approvals, comments, attachments, traceability | Template Ready, API Started | Phase 6 |
 | 24 | POS/Canteen/Tuckshop | Products, stock movement, cashier sessions, sales | Template Ready, API Started | Phase 6 |
-| 25 | Sports Management | Houses, teams, fixtures, results, student participation | Template Ready, API Started | Phase 6 |
+| 25 | Sports Program Administration | Houses, fixtures, competitions, sport outcomes and participation records | Template Ready, API Started | Phase 6 |
 | 26 | Timetable Management | Class/teacher/room timetables with conflict handling | Template Ready, API Started | Phase 6 |
 | 27 | Communication (announcements, SMS/email, messaging) | Announcements, threads, staff-parent messaging | Template Ready, API Started | Phase 5 |
 | 28 | Notifications (in-app + background jobs) | Template-based alerts, status tracking, retry-safe sending | Template Ready, API Started | Phase 5 |
@@ -57,18 +57,25 @@ This is the master module checklist for the Zimbabwe school SaaS.
 | 44 | Hostel Management | Hostels, rooms, bed allocation, boarding status and incidents | Template Ready, API Started | Phase 6 |
 | 45 | Health Management | Student/staff health records, screenings, immunization tracking | Template Ready, API Started | Phase 6 |
 | 46 | Clinic Management | Clinic visits, diagnoses, treatments, medication dispensing | Template Ready, API Started | Phase 6 |
+| 47 | Sports Taxonomy & Team Lifecycle | Sport categories, team master data, rosters, team-level performance lifecycle | Template Ready, API Started | Phase 6 |
+| 48 | Club Management | Club categories, membership, meetings, activities, attendance | Template Ready, API Started | Phase 6 |
+| 49 | Student Leadership | Leadership positions, assignments, duties, performance tracking | Template Ready, API Started | Phase 6 |
+| 50 | Awards & Rewards | Award categories, student awards, ceremonies, recognition system | Template Ready, API Started | Phase 6 |
+
+## Scope Boundaries (No Repetition Rules)
+- Module `25` owns competitions, fixtures, houses, and participation outcomes.
+- Module `47` owns sport master data (categories, teams, rosters) and team lifecycle.
+- Module `48` owns non-sport co-curricular clubs.
+- Module `49` owns student leadership governance and duty tracking.
+- Module `50` owns recognition workflows (awards, ceremonies, points, certificates).
 
 ## Non-Negotiable Zimbabwe Rules
-- Academic year follows 3-term structure.
+- Academic year follows a strict 3-term structure.
 - Student grade history must come from `StudentEnrollment` (not direct grade on `Student`).
 - Fees and payments must be term/year-aware for period reporting.
 - All business data must enforce tenant and school boundaries.
 
-## Next Execution Order
-✅ Core backend APIs implemented through Phase 7 hardening
-✅ Module-level frontend routes now available for all 46 modules at `/modules/:moduleSlug`
-✅ Integration tests active for key workflows and isolation rules
-
-**System Status: Backend implemented broadly; frontend is module-view complete for all 46 modules, while selected workflow-heavy modules still need deeper UX iteration.**
-
-
+## System Status
+- Backend: broad module API coverage with active integration tests.
+- Frontend: module-route coverage across the enterprise module catalog.
+- Remaining work: deepen workflow UX and business-rule depth in selected heavy modules.

@@ -1,4 +1,15 @@
-﻿using FluentValidation;
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
+using FluentValidation;
 using SmartSchool.API.Controllers.Phase4;
 
 namespace SmartSchool.API.Validation;
@@ -10,7 +21,7 @@ public class CreateExamTypeRequestValidator : AbstractValidator<CreateExamTypeRe
         RuleFor(x => x.TenantId).NotEmpty();
         RuleFor(x => x.SchoolId).NotEmpty();
         RuleFor(x => x.Name).NotEmpty().MaximumLength(100);
-        RuleFor(x => x.WeightPercent).InclusiveBetween(0, 100);
+        RuleFor(x => x.ResolveWeightPercent()).InclusiveBetween(0, 100);
     }
 }
 
@@ -24,7 +35,7 @@ public class CreateExamSessionRequestValidator : AbstractValidator<CreateExamSes
         RuleFor(x => x.TermId).NotEmpty();
         RuleFor(x => x.GradeId).NotEmpty();
         RuleFor(x => x.Name).NotEmpty().MaximumLength(120);
-        RuleFor(x => x.StartDate).LessThanOrEqualTo(x => x.EndDate);
+        RuleFor(x => x.ResolveStartDate()).LessThanOrEqualTo(x => x.ResolveEndDate());
         RuleFor(x => x.Status).MaximumLength(30).When(x => x.Status is not null);
     }
 }
@@ -82,7 +93,7 @@ public class UpdateExamTypeRequestValidator : AbstractValidator<UpdateExamTypeRe
     {
         RuleFor(x => x.TenantId).NotEmpty();
         RuleFor(x => x.Name).NotEmpty().MaximumLength(100);
-        RuleFor(x => x.WeightPercent).InclusiveBetween(0, 100);
+        RuleFor(x => x.ResolveWeightPercent()).InclusiveBetween(0, 100);
     }
 }
 
@@ -95,7 +106,7 @@ public class UpdateExamSessionRequestValidator : AbstractValidator<UpdateExamSes
         RuleFor(x => x.TermId).NotEmpty();
         RuleFor(x => x.GradeId).NotEmpty();
         RuleFor(x => x.Name).NotEmpty().MaximumLength(120);
-        RuleFor(x => x.StartDate).LessThanOrEqualTo(x => x.EndDate);
+        RuleFor(x => x.ResolveStartDate()).LessThanOrEqualTo(x => x.ResolveEndDate());
         RuleFor(x => x.Status).MaximumLength(30).When(x => x.Status is not null);
     }
 }

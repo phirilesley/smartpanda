@@ -1,4 +1,15 @@
-﻿namespace SmartSchool.API.Security;
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
+namespace SmartSchool.API.Security;
 
 public static class PolicyNames
 {
@@ -40,4 +51,15 @@ public static class PolicyNames
     public const string ClinicView = "clinic.view.policy";
     public const string ClinicDoctor = "clinic.doctor.policy";
     public const string ClinicPatient = "clinic.patient.policy";
+    public const string SportsManage = "sports.manage.policy";
+    public const string AwardsManage = "awards.manage.policy";
+    public const string ClubsManage = "clubs.manage.policy";
+    public const string LeadershipManage = "leadership.manage.policy";
+    
+    // System Roles
+    public const string Developer = "system.developer.policy";
+    public const string CEO = "system.ceo.policy";
+    public const string Admin = "system.admin.policy";
+    public const string SystemAdmin = "system.admin.policy";
+    public const string SuperAdmin = "system.superadmin.policy";
 }

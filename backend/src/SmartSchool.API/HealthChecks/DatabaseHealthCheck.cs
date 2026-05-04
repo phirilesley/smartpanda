@@ -1,14 +1,26 @@
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using SmartSchool.API.Data;
+using SmartSchool.Persistence.Data;
 
 namespace SmartSchool.API.HealthChecks
 {
     public class DatabaseHealthCheck : IHealthCheck
     {
-        private readonly AppDbContext _context;
+        private readonly SmartSchoolDbContext _context;
         private readonly ILogger<DatabaseHealthCheck> _logger;
 
-        public DatabaseHealthCheck(AppDbContext context, ILogger<DatabaseHealthCheck> logger)
+        public DatabaseHealthCheck(SmartSchoolDbContext context, ILogger<DatabaseHealthCheck> logger)
         {
             _context = context;
             _logger = logger;
@@ -42,10 +54,10 @@ namespace SmartSchool.API.HealthChecks
 
                 if (queryTime > 5000) // 5 seconds
                 {
-                    return HealthCheckResult.Degraded("Database query performance is slow", data);
+                    return HealthCheckResult.Degraded("Database query performance is slow", data: data);
                 }
 
-                return HealthCheckResult.Healthy("Database is healthy", data);
+                return HealthCheckResult.Healthy("Database is healthy", data: data);
             }
             catch (Exception ex)
             {

@@ -1,4 +1,14 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartSchool.API.Security;
@@ -6,6 +16,7 @@ using SmartSchool.API.Validation;
 using SmartSchool.Domain.Common;
 using SmartSchool.Domain.Modules.Finance;
 using SmartSchool.Persistence.Data;
+using SmartSchool.API.Services;
 
 namespace SmartSchool.API.Controllers.Phase3;
 
@@ -14,7 +25,7 @@ namespace SmartSchool.API.Controllers.Phase3;
 [Authorize(Policy = PolicyNames.FinanceManage)]
 [Authorize(Policy = PolicyNames.SchoolAccess)]
 [ServiceFilter(typeof(SmartSchool.API.Validation.CrossEntityValidationFilter))]
-public class StudentInvoicesController(SmartSchoolDbContext dbContext) : ControllerBase
+public class StudentInvoicesController(SmartSchoolDbContext dbContext, CacheService cacheService) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<StudentInvoice>>> GetAll([FromQuery] Guid tenantId, [FromQuery] Guid schoolId, [FromQuery] Guid studentId, [FromQuery] Guid academicYearId, [FromQuery] Guid termId, CancellationToken cancellationToken)
@@ -22,13 +33,32 @@ public class StudentInvoicesController(SmartSchoolDbContext dbContext) : Control
         if (tenantId == Guid.Empty || schoolId == Guid.Empty) return BadRequest("tenantId and schoolId are required.");
         if (!User.CanAccessTenant(tenantId)) return Forbid();
 
+        // 🚀 Cache fee statements for 5 minutes (short TTL for financial data)
+        var cacheKey = CacheService.CacheKeys.FeeStatement(tenantId, schoolId, studentId, academicYearId) + $":term:{termId}";
+        var cached = await cacheService.GetAsync<IReadOnlyList<StudentInvoice>>(cacheKey, cancellationToken);
+        if (cached is not null)
+        {
+            return Ok(cached);
+        }
+
         var query = dbContext.StudentInvoices.AsNoTracking().Where(x => x.TenantId == tenantId && x.SchoolId == schoolId);
         if (studentId != Guid.Empty) query = query.Where(x => x.StudentId == studentId);
         if (academicYearId != Guid.Empty) query = query.Where(x => x.AcademicYearId == academicYearId);
         if (termId != Guid.Empty) query = query.Where(x => x.TermId == termId);
 
         var items = await query.OrderByDescending(x => x.CreatedAtUtc).ToListAsync(cancellationToken);
+
+        await cacheService.SetAsync(cacheKey, items, cacheService._options.ShortTtl, cancellationToken);
         return Ok(items);
+    }
+
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<StudentInvoice>> GetById(Guid id, CancellationToken cancellationToken)
+    {
+        var item = await dbContext.StudentInvoices.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (item is null) return NotFound();
+        if (!User.CanAccessTenant(item.TenantId)) return Forbid();
+        return Ok(item);
     }
 
     [HttpGet("{invoiceId:guid}/lines")]
@@ -100,6 +130,9 @@ public class StudentInvoicesController(SmartSchoolDbContext dbContext) : Control
 
         dbContext.StudentInvoiceLines.AddRange(lines);
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        // 🚀 Invalidate fee statement cache for this student
+        await cacheService.RemoveAsync(CacheService.CacheKeys.FeeStatement(invoice.TenantId, invoice.SchoolId, invoice.StudentId, invoice.AcademicYearId), cancellationToken);
 
         return Ok(invoice);
     }

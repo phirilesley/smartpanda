@@ -1,4 +1,15 @@
-﻿using FluentValidation;
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
+using FluentValidation;
 using SmartSchool.API.Controllers.Auth;
 using SmartSchool.API.Controllers.Phase1;
 
@@ -42,7 +53,7 @@ public class CreateTenantRequestValidator : AbstractValidator<CreateTenantReques
         RuleFor(x => x.Name).NotEmpty().MaximumLength(200);
         RuleFor(x => x.Code).NotEmpty().MaximumLength(50);
         RuleFor(x => x.ContactEmail).NotEmpty().EmailAddress().MaximumLength(256);
-        RuleFor(x => x.ContactPhone).NotEmpty().MaximumLength(30);
+        RuleFor(x => x.ResolvePhone()).NotEmpty().MaximumLength(30);
     }
 }
 
@@ -53,7 +64,7 @@ public class UpdateTenantRequestValidator : AbstractValidator<UpdateTenantReques
         RuleFor(x => x.Name).NotEmpty().MaximumLength(200);
         RuleFor(x => x.Code).NotEmpty().MaximumLength(50);
         RuleFor(x => x.ContactEmail).NotEmpty().EmailAddress().MaximumLength(256);
-        RuleFor(x => x.ContactPhone).NotEmpty().MaximumLength(30);
+        RuleFor(x => x.ResolvePhone()).NotEmpty().MaximumLength(30);
     }
 }
 
@@ -64,8 +75,8 @@ public class CreateSchoolRequestValidator : AbstractValidator<CreateSchoolReques
         RuleFor(x => x.TenantId).NotEmpty();
         RuleFor(x => x.Name).NotEmpty().MaximumLength(200);
         RuleFor(x => x.Code).NotEmpty().MaximumLength(50);
-        RuleFor(x => x.Email).NotEmpty().EmailAddress().MaximumLength(256);
-        RuleFor(x => x.Phone).NotEmpty().MaximumLength(30);
+        RuleFor(x => x.ResolveEmail()).NotEmpty().EmailAddress().MaximumLength(256);
+        RuleFor(x => x.ResolvePhone()).NotEmpty().MaximumLength(30);
         RuleFor(x => x.Address).NotEmpty().MaximumLength(500);
     }
 }
@@ -76,8 +87,8 @@ public class UpdateSchoolRequestValidator : AbstractValidator<UpdateSchoolReques
     {
         RuleFor(x => x.Name).NotEmpty().MaximumLength(200);
         RuleFor(x => x.Code).NotEmpty().MaximumLength(50);
-        RuleFor(x => x.Email).NotEmpty().EmailAddress().MaximumLength(256);
-        RuleFor(x => x.Phone).NotEmpty().MaximumLength(30);
+        RuleFor(x => x.ResolveEmail()).NotEmpty().EmailAddress().MaximumLength(256);
+        RuleFor(x => x.ResolvePhone()).NotEmpty().MaximumLength(30);
         RuleFor(x => x.Address).NotEmpty().MaximumLength(500);
     }
 }
@@ -113,7 +124,7 @@ public class CreateGradeRequestValidator : AbstractValidator<CreateGradeRequest>
         RuleFor(x => x.TenantId).NotEmpty();
         RuleFor(x => x.SchoolId).NotEmpty();
         RuleFor(x => x.Name).NotEmpty().MaximumLength(100);
-        RuleFor(x => x.GradeOrder).GreaterThan(0);
+        RuleFor(x => x.ResolveGradeOrder()).GreaterThan(0);
     }
 }
 

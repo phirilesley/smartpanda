@@ -1,4 +1,15 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartSchool.API.Security;
@@ -9,6 +20,7 @@ namespace SmartSchool.API.Controllers.Phase4;
 
 [ApiController]
 [Route("api/exams/sessions")]
+[Route("api/exams/exam-sessions")]
 [Authorize(Policy = PolicyNames.ExamsManage)]
 [Authorize(Policy = PolicyNames.SchoolAccess)]
 public class ExamSessionsController(SmartSchoolDbContext dbContext) : ControllerBase
@@ -26,6 +38,15 @@ public class ExamSessionsController(SmartSchoolDbContext dbContext) : Controller
 
         var items = await query.OrderBy(x => x.StartDate).ToListAsync(cancellationToken);
         return Ok(items);
+    }
+
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<ExamSession>> GetById(Guid id, CancellationToken cancellationToken)
+    {
+        var item = await dbContext.ExamSessions.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (item is null) return NotFound();
+        if (!User.CanAccessTenant(item.TenantId)) return Forbid();
+        return Ok(item);
     }
 
     [HttpPost]
@@ -54,8 +75,8 @@ public class ExamSessionsController(SmartSchoolDbContext dbContext) : Controller
             TermId = request.TermId,
             GradeId = request.GradeId,
             Name = request.Name.Trim(),
-            StartDate = request.StartDate,
-            EndDate = request.EndDate,
+            StartDate = request.ResolveStartDate(),
+            EndDate = request.ResolveEndDate(),
             Status = string.IsNullOrWhiteSpace(request.Status) ? "Draft" : request.Status.Trim()
         };
 
@@ -94,8 +115,8 @@ public class ExamSessionsController(SmartSchoolDbContext dbContext) : Controller
         entity.TermId = request.TermId;
         entity.GradeId = request.GradeId;
         entity.Name = request.Name.Trim();
-        entity.StartDate = request.StartDate;
-        entity.EndDate = request.EndDate;
+        entity.StartDate = request.ResolveStartDate();
+        entity.EndDate = request.ResolveEndDate();
         entity.Status = string.IsNullOrWhiteSpace(request.Status) ? "Draft" : request.Status.Trim();
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -120,23 +141,39 @@ public class ExamSessionsController(SmartSchoolDbContext dbContext) : Controller
     }
 }
 
-public sealed record CreateExamSessionRequest(
-    Guid TenantId,
-    Guid SchoolId,
-    Guid AcademicYearId,
-    Guid TermId,
-    Guid GradeId,
-    string Name,
-    DateTime StartDate,
-    DateTime EndDate,
-    string? Status);
+public sealed class CreateExamSessionRequest
+{
+    public Guid TenantId { get; set; }
+    public Guid SchoolId { get; set; }
+    public Guid AcademicYearId { get; set; }
+    public Guid TermId { get; set; }
+    public Guid GradeId { get; set; }
+    public Guid? ExamTypeId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public DateTime StartDate { get; set; }
+    public DateTime EndDate { get; set; }
+    public DateTime? ExamDate { get; set; }
+    public decimal? TotalMarks { get; set; }
+    public string? Status { get; set; }
 
-public sealed record UpdateExamSessionRequest(
-    Guid TenantId,
-    Guid AcademicYearId,
-    Guid TermId,
-    Guid GradeId,
-    string Name,
-    DateTime StartDate,
-    DateTime EndDate,
-    string? Status);
+    public DateTime ResolveStartDate() => StartDate == default ? (ExamDate ?? DateTime.UtcNow) : StartDate;
+    public DateTime ResolveEndDate() => EndDate == default ? ResolveStartDate() : EndDate;
+}
+
+public sealed class UpdateExamSessionRequest
+{
+    public Guid TenantId { get; set; }
+    public Guid AcademicYearId { get; set; }
+    public Guid TermId { get; set; }
+    public Guid GradeId { get; set; }
+    public Guid? ExamTypeId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public DateTime StartDate { get; set; }
+    public DateTime EndDate { get; set; }
+    public DateTime? ExamDate { get; set; }
+    public decimal? TotalMarks { get; set; }
+    public string? Status { get; set; }
+
+    public DateTime ResolveStartDate() => StartDate == default ? (ExamDate ?? DateTime.UtcNow) : StartDate;
+    public DateTime ResolveEndDate() => EndDate == default ? ResolveStartDate() : EndDate;
+}

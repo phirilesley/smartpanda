@@ -1,3 +1,14 @@
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -89,13 +100,23 @@ public class AdminPortalController(SmartSchoolDbContext dbContext) : ControllerB
         if (!User.CanAccessTenant(tenantId)) return Forbid();
 
         var cutoff = DateTime.UtcNow.AddHours(-hours);
-        var activeUsers = await dbContext.AuditLogs.AsNoTracking()
+        var activeUsersRaw = await dbContext.AuditLogs.AsNoTracking()
             .Where(x => x.TenantId == tenantId && x.SchoolId == schoolId && x.CreatedAtUtc >= cutoff && x.UserId != null)
             .GroupBy(x => x.UserId)
-            .Select(g => new ActiveUserResponse(g.Key!.Value, g.Max(x => x.CreatedAtUtc), g.Count()))
+            .Select(g => new
+            {
+                UserId = g.Key,
+                LastActivityUtc = g.Max(x => x.CreatedAtUtc),
+                ActivityCount = g.Count()
+            })
             .OrderByDescending(x => x.LastActivityUtc)
             .Take(50)
             .ToListAsync(cancellationToken);
+
+        var activeUsers = activeUsersRaw
+            .Where(x => x.UserId.HasValue)
+            .Select(x => new ActiveUserResponse(x.UserId!.Value, x.LastActivityUtc, x.ActivityCount))
+            .ToList();
 
         return Ok(activeUsers);
     }
@@ -163,4 +184,3 @@ public sealed record RecentLogEntry(
     string Details);
 
 public sealed record MaintenanceModeRequest(Guid TenantId, bool Enabled, string Message);
-

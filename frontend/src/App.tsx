@@ -19,11 +19,15 @@ import { Register } from './pages/Auth/Register';
 import { NotFound } from './pages/NotFound';
 import { ModuleCatalog } from './pages/Modules/ModuleCatalog';
 import { ModuleDetail } from './pages/Modules/ModuleDetail';
-import EventsManagementView from './pages/Modules/Views/EventsManagementView';
-import TransportManagementView from './pages/Modules/Views/TransportManagementView';
-import HostelManagementView from './pages/Modules/Views/HostelManagementView';
-import HealthManagementView from './pages/Modules/Views/HealthManagementView';
-import ClinicManagementView from './pages/Modules/Views/ClinicManagementView';
+import EventsManagement from './pages/Operations/EventsManagement';
+import TransportManagement from './pages/Operations/TransportManagement';
+import HostelManagement from './pages/Operations/HostelManagement';
+import HealthManagement from './pages/Operations/HealthManagement';
+import ClinicManagement from './pages/Operations/ClinicManagement';
+import SportsManagement from './pages/Operations/SportsManagement';
+import ClubManagement from './pages/Operations/ClubManagement';
+import StudentLeadership from './pages/Operations/StudentLeadership';
+import AwardsRewards from './pages/Operations/AwardsRewards';
 
 // Context Providers
 import { AuthProvider } from './contexts/AuthContext';
@@ -88,11 +92,15 @@ function AppRoutes() {
           <Route path="/ai" element={<AIAnalytics />} />
           <Route path="/modules" element={<ModuleCatalog />} />
           <Route path="/modules/:moduleSlug" element={<ModuleDetail />} />
-          <Route path="/operations/events-management" element={<EventsManagementView />} />
-          <Route path="/operations/transport-management" element={<TransportManagementView />} />
-          <Route path="/operations/hostel-management" element={<HostelManagementView />} />
-          <Route path="/operations/health-management" element={<HealthManagementView />} />
-          <Route path="/operations/clinic-management" element={<ClinicManagementView />} />
+          <Route path="/operations/events-management" element={<EventsManagement />} />
+          <Route path="/operations/transport-management" element={<TransportManagement />} />
+          <Route path="/operations/hostel-management" element={<HostelManagement />} />
+          <Route path="/operations/health-management" element={<HealthManagement />} />
+          <Route path="/operations/clinic-management" element={<ClinicManagement />} />
+          <Route path="/operations/sports-management" element={<SportsManagement />} />
+          <Route path="/operations/club-management" element={<ClubManagement />} />
+          <Route path="/operations/student-leadership" element={<StudentLeadership />} />
+          <Route path="/operations/awards-rewards" element={<AwardsRewards />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </MobileLayout>
@@ -108,11 +116,15 @@ function AppRoutes() {
         <Route path="/analytics" element={<AIAnalytics />} />
         <Route path="/modules" element={<ModuleCatalog />} />
         <Route path="/modules/:moduleSlug" element={<ModuleDetail />} />
-        <Route path="/operations/events-management" element={<EventsManagementView />} />
-        <Route path="/operations/transport-management" element={<TransportManagementView />} />
-        <Route path="/operations/hostel-management" element={<HostelManagementView />} />
-        <Route path="/operations/health-management" element={<HealthManagementView />} />
-        <Route path="/operations/clinic-management" element={<ClinicManagementView />} />
+        <Route path="/operations/events-management" element={<EventsManagement />} />
+        <Route path="/operations/transport-management" element={<TransportManagement />} />
+        <Route path="/operations/hostel-management" element={<HostelManagement />} />
+        <Route path="/operations/health-management" element={<HealthManagement />} />
+        <Route path="/operations/clinic-management" element={<ClinicManagement />} />
+        <Route path="/operations/sports-management" element={<SportsManagement />} />
+        <Route path="/operations/club-management" element={<ClubManagement />} />
+        <Route path="/operations/student-leadership" element={<StudentLeadership />} />
+        <Route path="/operations/awards-rewards" element={<AwardsRewards />} />
         <Route path="/mobile/student" element={<StudentDashboard />} />
         <Route path="/mobile/parent" element={<ParentDashboard />} />
         <Route path="/mobile/teacher" element={<TeacherDashboard />} />

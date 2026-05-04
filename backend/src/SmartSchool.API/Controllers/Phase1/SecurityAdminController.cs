@@ -1,3 +1,14 @@
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -10,6 +21,7 @@ namespace SmartSchool.API.Controllers.Phase1;
 
 [ApiController]
 [Route("api/security-admin")]
+[Route("api/security")]
 [Authorize(Policy = PolicyNames.SecurityManage)]
 public class SecurityAdminController(SmartSchoolDbContext dbContext, UserManager<AppUser> userManager, RoleManager<AppRole> roleManager) : ControllerBase
 {
@@ -31,6 +43,32 @@ public class SecurityAdminController(SmartSchoolDbContext dbContext, UserManager
 
         var roles = await query.OrderBy(x => x.Name).ToListAsync(cancellationToken);
         return Ok(roles);
+    }
+
+    [HttpGet("user-school-access")]
+    public async Task<ActionResult<IReadOnlyList<UserSchoolAccess>>> GetUserSchoolAccess([FromQuery] Guid tenantId, [FromQuery] Guid schoolId, CancellationToken cancellationToken)
+    {
+        if (tenantId == Guid.Empty || schoolId == Guid.Empty) return BadRequest("tenantId and schoolId are required.");
+        if (!User.CanAccessTenant(tenantId)) return Forbid();
+
+        var items = await dbContext.UserSchoolAccesses.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.SchoolId == schoolId)
+            .OrderBy(x => x.UserId)
+            .ToListAsync(cancellationToken);
+        return Ok(items);
+    }
+
+    [HttpGet("user-permissions")]
+    public async Task<ActionResult<IReadOnlyList<UserPermission>>> GetUserPermissions([FromQuery] Guid tenantId, [FromQuery] Guid userId, CancellationToken cancellationToken)
+    {
+        if (tenantId == Guid.Empty || userId == Guid.Empty) return BadRequest("tenantId and userId are required.");
+        if (!User.CanAccessTenant(tenantId)) return Forbid();
+
+        var items = await dbContext.UserPermissions.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.UserId == userId)
+            .OrderBy(x => x.PermissionId)
+            .ToListAsync(cancellationToken);
+        return Ok(items);
     }
 
     [HttpPost("users/{userId:guid}/school-access")]

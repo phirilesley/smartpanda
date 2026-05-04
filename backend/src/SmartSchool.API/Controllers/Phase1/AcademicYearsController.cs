@@ -1,4 +1,15 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartSchool.API.Security;
@@ -9,6 +20,7 @@ namespace SmartSchool.API.Controllers.Phase1;
 
 [ApiController]
 [Route("api/academics/academic-years")]
+[Route("api/academic-years")]
 [Authorize(Policy = PolicyNames.AcademicsManage)]
 [Authorize(Policy = PolicyNames.SchoolAccess)]
 public class AcademicYearsController(SmartSchoolDbContext dbContext) : ControllerBase
@@ -65,7 +77,7 @@ public class AcademicYearsController(SmartSchoolDbContext dbContext) : Controlle
         dbContext.AcademicYears.Add(entity);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return CreatedAtAction(nameof(GetById), new { id = entity.Id }, entity);
+        return Ok(entity);
     }
 
     [HttpGet("{id:guid}")]

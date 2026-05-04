@@ -1,4 +1,15 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartSchool.API.Security;
@@ -54,21 +65,34 @@ public class ResultApprovalsController(SmartSchoolDbContext dbContext) : Control
     }
 
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<ResultApproval>>> GetBySession([FromQuery] Guid tenantId, [FromQuery] Guid schoolId, [FromQuery] Guid examSessionId, CancellationToken cancellationToken)
+    public async Task<ActionResult<IReadOnlyList<ResultApproval>>> GetBySession([FromQuery] Guid tenantId, [FromQuery] Guid schoolId, [FromQuery] Guid? examSessionId, CancellationToken cancellationToken)
     {
-        if (tenantId == Guid.Empty || schoolId == Guid.Empty || examSessionId == Guid.Empty)
+        if (tenantId == Guid.Empty || schoolId == Guid.Empty)
         {
-            return BadRequest("tenantId, schoolId, and examSessionId are required.");
+            return BadRequest("tenantId and schoolId are required.");
         }
 
         if (!User.CanAccessTenant(tenantId)) return Forbid();
 
-        var items = await dbContext.ResultApprovals.AsNoTracking()
-            .Where(x => x.TenantId == tenantId && x.SchoolId == schoolId && x.ExamSessionId == examSessionId)
-            .OrderByDescending(x => x.ApprovedAtUtc)
-            .ToListAsync(cancellationToken);
+        var query = dbContext.ResultApprovals.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.SchoolId == schoolId);
+        if (examSessionId.HasValue && examSessionId.Value != Guid.Empty)
+        {
+            query = query.Where(x => x.ExamSessionId == examSessionId.Value);
+        }
+
+        var items = await query.OrderByDescending(x => x.ApprovedAtUtc).ToListAsync(cancellationToken);
 
         return Ok(items);
+    }
+
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<ResultApproval>> GetById(Guid id, CancellationToken cancellationToken)
+    {
+        var item = await dbContext.ResultApprovals.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (item is null) return NotFound();
+        if (!User.CanAccessTenant(item.TenantId)) return Forbid();
+        return Ok(item);
     }
 
     [HttpDelete("{id:guid}")]

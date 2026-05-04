@@ -1,4 +1,15 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartSchool.API.Security;
@@ -9,17 +20,22 @@ namespace SmartSchool.API.Controllers.Phase1;
 
 [ApiController]
 [Route("api/platform/tenants")]
+[Route("api/tenants")]
 [Authorize(Policy = PolicyNames.PlatformManage)]
 public class TenantsController(SmartSchoolDbContext dbContext) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<Tenant>>> GetAll(CancellationToken cancellationToken)
+    public async Task<ActionResult<IReadOnlyList<Tenant>>> GetAll([FromQuery] Guid? tenantId, CancellationToken cancellationToken)
     {
-        var items = await dbContext.Tenants
+        var query = dbContext.Tenants
             .AsNoTracking()
-            .Where(x => !x.IsDeleted)
-            .OrderBy(x => x.Name)
-            .ToListAsync(cancellationToken);
+            .Where(x => !x.IsDeleted);
+        if (tenantId.HasValue && tenantId.Value != Guid.Empty)
+        {
+            query = query.Where(x => x.Id == tenantId.Value);
+        }
+
+        var items = await query.OrderBy(x => x.Name).ToListAsync(cancellationToken);
 
         return Ok(items);
     }
@@ -39,14 +55,14 @@ public class TenantsController(SmartSchoolDbContext dbContext) : ControllerBase
             Name = request.Name.Trim(),
             Code = request.Code.Trim().ToUpperInvariant(),
             ContactEmail = request.ContactEmail.Trim(),
-            ContactPhone = request.ContactPhone.Trim(),
+            ContactPhone = request.ResolvePhone().Trim(),
             IsActive = true
         };
 
         dbContext.Tenants.Add(tenant);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return CreatedAtAction(nameof(GetById), new { id = tenant.Id }, tenant);
+        return Ok(tenant);
     }
 
     [HttpGet("{id:guid}")]
@@ -77,7 +93,7 @@ public class TenantsController(SmartSchoolDbContext dbContext) : ControllerBase
         tenant.Name = request.Name.Trim();
         tenant.Code = code;
         tenant.ContactEmail = request.ContactEmail.Trim();
-        tenant.ContactPhone = request.ContactPhone.Trim();
+        tenant.ContactPhone = request.ResolvePhone().Trim();
         tenant.IsActive = request.IsActive;
         tenant.UpdatedAtUtc = DateTime.UtcNow;
 
@@ -103,5 +119,25 @@ public class TenantsController(SmartSchoolDbContext dbContext) : ControllerBase
     }
 }
 
-public sealed record CreateTenantRequest(string Name, string Code, string ContactEmail, string ContactPhone);
-public sealed record UpdateTenantRequest(string Name, string Code, string ContactEmail, string ContactPhone, bool IsActive);
+public sealed class CreateTenantRequest
+{
+    public string Name { get; set; } = string.Empty;
+    public string Code { get; set; } = string.Empty;
+    public string ContactEmail { get; set; } = string.Empty;
+    public string? ContactPhone { get; set; }
+    public string? Phone { get; set; }
+
+    public string ResolvePhone() => string.IsNullOrWhiteSpace(ContactPhone) ? (Phone ?? string.Empty) : ContactPhone;
+}
+
+public sealed class UpdateTenantRequest
+{
+    public string Name { get; set; } = string.Empty;
+    public string Code { get; set; } = string.Empty;
+    public string ContactEmail { get; set; } = string.Empty;
+    public string? ContactPhone { get; set; }
+    public string? Phone { get; set; }
+    public bool IsActive { get; set; }
+
+    public string ResolvePhone() => string.IsNullOrWhiteSpace(ContactPhone) ? (Phone ?? string.Empty) : ContactPhone;
+}

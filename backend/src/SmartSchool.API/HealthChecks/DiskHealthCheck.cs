@@ -1,3 +1,14 @@
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace SmartSchool.API.HealthChecks
@@ -36,25 +47,25 @@ namespace SmartSchool.API.HealthChecks
 
                 if (!driveInfo.IsReady)
                 {
-                    return Task.FromResult(HealthCheckResult.Unhealthy("Drive is not ready", data));
+                    return Task.FromResult(HealthCheckResult.Unhealthy("Drive is not ready", data: data));
                 }
 
                 if (usagePercent > 95)
                 {
-                    return Task.FromResult(HealthCheckResult.Unhealthy($"Disk usage is critically high: {usagePercent:F2}%", data));
+                    return Task.FromResult(HealthCheckResult.Unhealthy($"Disk usage is critically high: {usagePercent:F2}%", data: data));
                 }
 
                 if (usagePercent > 85)
                 {
-                    return Task.FromResult(HealthCheckResult.Degraded($"Disk usage is high: {usagePercent:F2}%", data));
+                    return Task.FromResult(HealthCheckResult.Degraded($"Disk usage is high: {usagePercent:F2}%", data: data));
                 }
 
                 if (freeSpace < 1) // Less than 1 GB free
                 {
-                    return Task.FromResult(HealthCheckResult.Degraded($"Low disk space: {freeSpace:F2} GB free", data));
+                    return Task.FromResult(HealthCheckResult.Degraded($"Low disk space: {freeSpace:F2} GB free", data: data));
                 }
 
-                return Task.FromResult(HealthCheckResult.Healthy($"Disk usage is normal: {usagePercent:F2}%", data));
+                return Task.FromResult(HealthCheckResult.Healthy($"Disk usage is normal: {usagePercent:F2}%", data: data));
             }
             catch (Exception ex)
             {

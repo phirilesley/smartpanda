@@ -1,3 +1,14 @@
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -71,7 +82,7 @@ public class SportsController(SmartSchoolDbContext dbContext) : ControllerBase
         return Ok(entity);
     }
 
-    [HttpPost("teams")]
+    [HttpPost("teams/legacy")]
     public async Task<ActionResult<SportTeam>> CreateTeam([FromBody] CreateSportTeamRequest request, CancellationToken cancellationToken)
     {
         if (!User.CanAccessTenant(request.TenantId)) return Forbid();

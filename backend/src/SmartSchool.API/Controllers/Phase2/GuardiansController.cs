@@ -1,4 +1,14 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartSchool.API.Security;
@@ -9,6 +19,7 @@ namespace SmartSchool.API.Controllers.Phase2;
 
 [ApiController]
 [Route("api/students/guardians")]
+[Route("api/guardians")]
 [Authorize(Policy = PolicyNames.StudentsManage)]
 [Authorize(Policy = PolicyNames.SchoolAccess)]
 public class GuardiansController(SmartSchoolDbContext dbContext) : ControllerBase
@@ -57,7 +68,7 @@ public class GuardiansController(SmartSchoolDbContext dbContext) : ControllerBas
         dbContext.Guardians.Add(guardian);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return CreatedAtAction(nameof(GetById), new { id = guardian.Id }, guardian);
+        return Ok(guardian);
     }
 
     [HttpGet("{id:guid}")]
@@ -144,5 +155,4 @@ public sealed record UpdateGuardianRequest(
     string PhoneNumber,
     string Email,
     string Relationship);
-
 

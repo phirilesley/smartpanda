@@ -1068,6 +1068,608 @@ BEGIN
 END;
 
 -- ========================================
+-- SPORTS MANAGEMENT MODULE
+-- ========================================
+
+CREATE TABLE SportsCategories (
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    TenantId UNIQUEIDENTIFIER NOT NULL,
+    SchoolId UNIQUEIDENTIFIER NOT NULL,
+    Name NVARCHAR(100) NOT NULL,
+    Description NVARCHAR(500),
+    Code NVARCHAR(20) NOT NULL,
+    IsActive BIT NOT NULL DEFAULT 1,
+    CreatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    IsDeleted BIT NOT NULL DEFAULT 0,
+    RowVersion ROWVERSION NOT NULL,
+
+    CONSTRAINT FK_SportsCategories_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(Id),
+    CONSTRAINT FK_SportsCategories_Schools FOREIGN KEY (SchoolId) REFERENCES Schools(Id),
+    CONSTRAINT UQ_SportsCategories_TenantSchoolCode UNIQUE (TenantId, SchoolId, Code)
+);
+
+CREATE TABLE Sports (
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    TenantId UNIQUEIDENTIFIER NOT NULL,
+    SchoolId UNIQUEIDENTIFIER NOT NULL,
+    SportCategoryId UNIQUEIDENTIFIER NOT NULL,
+    Name NVARCHAR(100) NOT NULL,
+    Description NVARCHAR(500),
+    Code NVARCHAR(20) NOT NULL,
+    TeamSize INT NOT NULL DEFAULT 1,
+    IsTeamSport BIT NOT NULL DEFAULT 0,
+    EquipmentRequired NVARCHAR(1000),
+    Season NVARCHAR(50), -- 'Spring', 'Summer', 'Fall', 'Winter', 'Year-round'
+    IsActive BIT NOT NULL DEFAULT 1,
+    CreatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    IsDeleted BIT NOT NULL DEFAULT 0,
+    RowVersion ROWVERSION NOT NULL,
+
+    CONSTRAINT FK_Sports_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(Id),
+    CONSTRAINT FK_Sports_Schools FOREIGN KEY (SchoolId) REFERENCES Schools(Id),
+    CONSTRAINT FK_Sports_SportsCategories FOREIGN KEY (SportCategoryId) REFERENCES SportsCategories(Id),
+    CONSTRAINT UQ_Sports_TenantSchoolCode UNIQUE (TenantId, SchoolId, Code)
+);
+
+CREATE TABLE SportTeams (
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    TenantId UNIQUEIDENTIFIER NOT NULL,
+    SchoolId UNIQUEIDENTIFIER NOT NULL,
+    SportId UNIQUEIDENTIFIER NOT NULL,
+    Name NVARCHAR(100) NOT NULL,
+    Description NVARCHAR(500),
+    TeamType NVARCHAR(50) NOT NULL, -- 'Varsity', 'Junior Varsity', 'Freshman', 'Club'
+    GradeId UNIQUEIDENTIFIER,
+    AcademicYearId UNIQUEIDENTIFIER NOT NULL,
+    CoachStaffId UNIQUEIDENTIFIER,
+    AssistantCoachStaffId UNIQUEIDENTIFIER,
+    MaxMembers INT NOT NULL DEFAULT 20,
+    CurrentMembers INT NOT NULL DEFAULT 0,
+    PracticeSchedule NVARCHAR(500),
+    HomeVenue NVARCHAR(200),
+    IsActive BIT NOT NULL DEFAULT 1,
+    CreatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    IsDeleted BIT NOT NULL DEFAULT 0,
+    RowVersion ROWVERSION NOT NULL,
+
+    CONSTRAINT FK_SportTeams_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(Id),
+    CONSTRAINT FK_SportTeams_Schools FOREIGN KEY (SchoolId) REFERENCES Schools(Id),
+    CONSTRAINT FK_SportTeams_Sports FOREIGN KEY (SportId) REFERENCES Sports(Id),
+    CONSTRAINT FK_SportTeams_Grades FOREIGN KEY (GradeId) REFERENCES Grades(Id),
+    CONSTRAINT FK_SportTeams_AcademicYears FOREIGN KEY (AcademicYearId) REFERENCES AcademicYears(Id),
+    CONSTRAINT FK_SportTeams_Coach FOREIGN KEY (CoachStaffId) REFERENCES StaffMembers(Id),
+    CONSTRAINT FK_SportTeams_AssistantCoach FOREIGN KEY (AssistantCoachStaffId) REFERENCES StaffMembers(Id)
+);
+
+CREATE TABLE SportTeamMembers (
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    TenantId UNIQUEIDENTIFIER NOT NULL,
+    SchoolId UNIQUEIDENTIFIER NOT NULL,
+    SportTeamId UNIQUEIDENTIFIER NOT NULL,
+    StudentId UNIQUEIDENTIFIER NOT NULL,
+    Position NVARCHAR(100),
+    JerseyNumber INT,
+    JoinDate DATE NOT NULL,
+    LeaveDate DATE,
+    Status NVARCHAR(20) NOT NULL DEFAULT 'Active', -- 'Active', 'Inactive', 'Suspended'
+    Captain BIT NOT NULL DEFAULT 0,
+    ViceCaptain BIT NOT NULL DEFAULT 0,
+    PerformanceRating DECIMAL(3,2), -- 1.00 to 5.00
+    Notes NVARCHAR(1000),
+    CreatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    IsDeleted BIT NOT NULL DEFAULT 0,
+    RowVersion ROWVERSION NOT NULL,
+
+    CONSTRAINT FK_SportTeamMembers_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(Id),
+    CONSTRAINT FK_SportTeamMembers_Schools FOREIGN KEY (SchoolId) REFERENCES Schools(Id),
+    CONSTRAINT FK_SportTeamMembers_SportTeams FOREIGN KEY (SportTeamId) REFERENCES SportTeams(Id),
+    CONSTRAINT FK_SportTeamMembers_Students FOREIGN KEY (StudentId) REFERENCES Students(Id),
+    CONSTRAINT UQ_SportTeamMembers_TeamStudent UNIQUE (SportTeamId, StudentId)
+);
+
+CREATE TABLE SportEvents (
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    TenantId UNIQUEIDENTIFIER NOT NULL,
+    SchoolId UNIQUEIDENTIFIER NOT NULL,
+    SportId UNIQUEIDENTIFIER NOT NULL,
+    Name NVARCHAR(200) NOT NULL,
+    Description NVARCHAR(1000),
+    EventType NVARCHAR(50) NOT NULL, -- 'Practice', 'Game', 'Tournament', 'Meet', 'Competition'
+    EventDate DATE NOT NULL,
+    StartTime TIME NOT NULL,
+    EndTime TIME,
+    Location NVARCHAR(200),
+    OpponentTeam NVARCHAR(200), -- For games/tournaments
+    HomeGame BIT NOT NULL DEFAULT 1,
+    Status NVARCHAR(20) NOT NULL DEFAULT 'Scheduled', -- 'Scheduled', 'InProgress', 'Completed', 'Cancelled', 'Postponed'
+    Weather NVARCHAR(100),
+    Attendance INT,
+    Score NVARCHAR(50), -- e.g., "2-1", "95-82"
+    Result NVARCHAR(20), -- 'Win', 'Loss', 'Draw', 'TBD'
+    Notes NVARCHAR(1000),
+    CreatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    IsDeleted BIT NOT NULL DEFAULT 0,
+    RowVersion ROWVERSION NOT NULL,
+
+    CONSTRAINT FK_SportEvents_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(Id),
+    CONSTRAINT FK_SportEvents_Schools FOREIGN KEY (SchoolId) REFERENCES Schools(Id),
+    CONSTRAINT FK_SportEvents_Sports FOREIGN KEY (SportId) REFERENCES Sports(Id)
+);
+
+CREATE TABLE SportEventParticipants (
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    TenantId UNIQUEIDENTIFIER NOT NULL,
+    SchoolId UNIQUEIDENTIFIER NOT NULL,
+    SportEventId UNIQUEIDENTIFIER NOT NULL,
+    SportTeamId UNIQUEIDENTIFIER,
+    StudentId UNIQUEIDENTIFIER,
+    Role NVARCHAR(50) NOT NULL, -- 'Player', 'Starter', 'Bench', 'Captain', 'Coach', 'Referee'
+    ParticipationStatus NVARCHAR(20) NOT NULL DEFAULT 'Confirmed', -- 'Confirmed', 'Declined', 'Injured', 'Absent'
+    Performance NVARCHAR(500), -- Performance notes, stats, etc.
+    MinutesPlayed INT,
+    PointsScored INT,
+    Assists INT,
+    Goals INT,
+    CreatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    IsDeleted BIT NOT NULL DEFAULT 0,
+    RowVersion ROWVERSION NOT NULL,
+
+    CONSTRAINT FK_SportEventParticipants_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(Id),
+    CONSTRAINT FK_SportEventParticipants_Schools FOREIGN KEY (SchoolId) REFERENCES Schools(Id),
+    CONSTRAINT FK_SportEventParticipants_SportEvents FOREIGN KEY (SportEventId) REFERENCES SportEvents(Id),
+    CONSTRAINT FK_SportEventParticipants_SportTeams FOREIGN KEY (SportTeamId) REFERENCES SportTeams(Id),
+    CONSTRAINT FK_SportEventParticipants_Students FOREIGN KEY (StudentId) REFERENCES Students(Id)
+);
+
+CREATE TABLE SportAchievements (
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    TenantId UNIQUEIDENTIFIER NOT NULL,
+    SchoolId UNIQUEIDENTIFIER NOT NULL,
+    StudentId UNIQUEIDENTIFIER,
+    SportTeamId UNIQUEIDENTIFIER,
+    SportEventId UNIQUEIDENTIFIER,
+    AchievementType NVARCHAR(50) NOT NULL, -- 'MVP', 'Best Player', 'Top Scorer', 'Champion', 'Runner-up', 'Participation'
+    Title NVARCHAR(200) NOT NULL,
+    Description NVARCHAR(1000),
+    AchievementDate DATE NOT NULL,
+    Level NVARCHAR(50) NOT NULL, -- 'School', 'District', 'Regional', 'National', 'International'
+    Position NVARCHAR(50), -- '1st', '2nd', '3rd', etc.
+    Medal NVARCHAR(20), -- 'Gold', 'Silver', 'Bronze', 'None'
+    Certificate BIT NOT NULL DEFAULT 0,
+    Trophy BIT NOT NULL DEFAULT 0,
+    PointsAwarded INT DEFAULT 0,
+    CreatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    IsDeleted BIT NOT NULL DEFAULT 0,
+    RowVersion ROWVERSION NOT NULL,
+
+    CONSTRAINT FK_SportAchievements_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(Id),
+    CONSTRAINT FK_SportAchievements_Schools FOREIGN KEY (SchoolId) REFERENCES Schools(Id),
+    CONSTRAINT FK_SportAchievements_Students FOREIGN KEY (StudentId) REFERENCES Students(Id),
+    CONSTRAINT FK_SportAchievements_SportTeams FOREIGN KEY (SportTeamId) REFERENCES SportTeams(Id),
+    CONSTRAINT FK_SportAchievements_SportEvents FOREIGN KEY (SportEventId) REFERENCES SportEvents(Id)
+);
+
+-- ========================================
+-- CLUB MANAGEMENT MODULE
+-- ========================================
+
+CREATE TABLE ClubCategories (
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    TenantId UNIQUEIDENTIFIER NOT NULL,
+    SchoolId UNIQUEIDENTIFIER NOT NULL,
+    Name NVARCHAR(100) NOT NULL,
+    Description NVARCHAR(500),
+    Code NVARCHAR(20) NOT NULL,
+    IsActive BIT NOT NULL DEFAULT 1,
+    CreatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    IsDeleted BIT NOT NULL DEFAULT 0,
+    RowVersion ROWVERSION NOT NULL,
+
+    CONSTRAINT FK_ClubCategories_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(Id),
+    CONSTRAINT FK_ClubCategories_Schools FOREIGN KEY (SchoolId) REFERENCES Schools(Id),
+    CONSTRAINT UQ_ClubCategories_TenantSchoolCode UNIQUE (TenantId, SchoolId, Code)
+);
+
+CREATE TABLE Clubs (
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    TenantId UNIQUEIDENTIFIER NOT NULL,
+    SchoolId UNIQUEIDENTIFIER NOT NULL,
+    ClubCategoryId UNIQUEIDENTIFIER NOT NULL,
+    Name NVARCHAR(100) NOT NULL,
+    Description NVARCHAR(1000),
+    Code NVARCHAR(20) NOT NULL,
+    MissionStatement NVARCHAR(1000),
+    Objectives NVARCHAR(1000),
+    MeetingSchedule NVARCHAR(500),
+    MeetingLocation NVARCHAR(200),
+    MaxMembers INT NOT NULL DEFAULT 50,
+    CurrentMembers INT NOT NULL DEFAULT 0,
+    MembershipFee DECIMAL(10,2) DEFAULT 0,
+    AcademicYearId UNIQUEIDENTIFIER NOT NULL,
+    AdvisorStaffId UNIQUEIDENTIFIER,
+    CoAdvisorStaffId UNIQUEIDENTIFIER,
+    IsActive BIT NOT NULL DEFAULT 1,
+    CreatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    IsDeleted BIT NOT NULL DEFAULT 0,
+    RowVersion ROWVERSION NOT NULL,
+
+    CONSTRAINT FK_Clubs_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(Id),
+    CONSTRAINT FK_Clubs_Schools FOREIGN KEY (SchoolId) REFERENCES Schools(Id),
+    CONSTRAINT FK_Clubs_ClubCategories FOREIGN KEY (ClubCategoryId) REFERENCES ClubCategories(Id),
+    CONSTRAINT FK_Clubs_AcademicYears FOREIGN KEY (AcademicYearId) REFERENCES AcademicYears(Id),
+    CONSTRAINT FK_Clubs_Advisor FOREIGN KEY (AdvisorStaffId) REFERENCES StaffMembers(Id),
+    CONSTRAINT FK_Clubs_CoAdvisor FOREIGN KEY (CoAdvisorStaffId) REFERENCES StaffMembers(Id),
+    CONSTRAINT UQ_Clubs_TenantSchoolCode UNIQUE (TenantId, SchoolId, Code)
+);
+
+CREATE TABLE ClubMembers (
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    TenantId UNIQUEIDENTIFIER NOT NULL,
+    SchoolId UNIQUEIDENTIFIER NOT NULL,
+    ClubId UNIQUEIDENTIFIER NOT NULL,
+    StudentId UNIQUEIDENTIFIER NOT NULL,
+    MemberType NVARCHAR(50) NOT NULL DEFAULT 'Member', -- 'Member', 'Officer', 'President', 'Vice President', 'Secretary', 'Treasurer'
+    Position NVARCHAR(100),
+    JoinDate DATE NOT NULL,
+    LeaveDate DATE,
+    Status NVARCHAR(20) NOT NULL DEFAULT 'Active', -- 'Active', 'Inactive', 'Suspended', 'Graduated'
+    MembershipFeePaid BIT NOT NULL DEFAULT 0,
+    MembershipFeeAmount DECIMAL(10,2) DEFAULT 0,
+    AttendanceRate DECIMAL(5,2), -- Percentage
+    Contribution NVARCHAR(500),
+    CreatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    IsDeleted BIT NOT NULL DEFAULT 0,
+    RowVersion ROWVERSION NOT NULL,
+
+    CONSTRAINT FK_ClubMembers_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(Id),
+    CONSTRAINT FK_ClubMembers_Schools FOREIGN KEY (SchoolId) REFERENCES Schools(Id),
+    CONSTRAINT FK_ClubMembers_Clubs FOREIGN KEY (ClubId) REFERENCES Clubs(Id),
+    CONSTRAINT FK_ClubMembers_Students FOREIGN KEY (StudentId) REFERENCES Students(Id),
+    CONSTRAINT UQ_ClubMembers_ClubStudent UNIQUE (ClubId, StudentId)
+);
+
+CREATE TABLE ClubMeetings (
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    TenantId UNIQUEIDENTIFIER NOT NULL,
+    SchoolId UNIQUEIDENTIFIER NOT NULL,
+    ClubId UNIQUEIDENTIFIER NOT NULL,
+    Title NVARCHAR(200) NOT NULL,
+    Description NVARCHAR(1000),
+    MeetingDate DATE NOT NULL,
+    StartTime TIME NOT NULL,
+    EndTime TIME,
+    Location NVARCHAR(200),
+    MeetingType NVARCHAR(50) NOT NULL DEFAULT 'Regular', -- 'Regular', 'Special', 'Emergency', 'Planning'
+    Agenda NVARCHAR(1000),
+    Minutes NVARCHAR(2000),
+    AttendanceCount INT DEFAULT 0,
+    Status NVARCHAR(20) NOT NULL DEFAULT 'Scheduled', -- 'Scheduled', 'InProgress', 'Completed', 'Cancelled'
+    CreatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    IsDeleted BIT NOT NULL DEFAULT 0,
+    RowVersion ROWVERSION NOT NULL,
+
+    CONSTRAINT FK_ClubMeetings_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(Id),
+    CONSTRAINT FK_ClubMeetings_Schools FOREIGN KEY (SchoolId) REFERENCES Schools(Id),
+    CONSTRAINT FK_ClubMeetings_Clubs FOREIGN KEY (ClubId) REFERENCES Clubs(Id)
+);
+
+CREATE TABLE ClubMeetingAttendances (
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    TenantId UNIQUEIDENTIFIER NOT NULL,
+    SchoolId UNIQUEIDENTIFIER NOT NULL,
+    ClubMeetingId UNIQUEIDENTIFIER NOT NULL,
+    ClubMemberId UNIQUEIDENTIFIER NOT NULL,
+    AttendanceStatus NVARCHAR(20) NOT NULL DEFAULT 'Present', -- 'Present', 'Absent', 'Late', 'Excused'
+    ArrivalTime TIME,
+    DepartureTime TIME,
+    Participation NVARCHAR(500),
+    Notes NVARCHAR(500),
+    CreatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    IsDeleted BIT NOT NULL DEFAULT 0,
+    RowVersion ROWVERSION NOT NULL,
+
+    CONSTRAINT FK_ClubMeetingAttendances_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(Id),
+    CONSTRAINT FK_ClubMeetingAttendances_Schools FOREIGN KEY (SchoolId) REFERENCES Schools(Id),
+    CONSTRAINT FK_ClubMeetingAttendances_ClubMeetings FOREIGN KEY (ClubMeetingId) REFERENCES ClubMeetings(Id),
+    CONSTRAINT FK_ClubMeetingAttendances_ClubMembers FOREIGN KEY (ClubMemberId) REFERENCES ClubMembers(Id),
+    CONSTRAINT UQ_ClubMeetingAttendances_MeetingMember UNIQUE (ClubMeetingId, ClubMemberId)
+);
+
+CREATE TABLE ClubActivities (
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    TenantId UNIQUEIDENTIFIER NOT NULL,
+    SchoolId UNIQUEIDENTIFIER NOT NULL,
+    ClubId UNIQUEIDENTIFIER NOT NULL,
+    Title NVARCHAR(200) NOT NULL,
+    Description NVARCHAR(1000),
+    ActivityType NVARCHAR(50) NOT NULL, -- 'Event', 'Project', 'Competition', 'Workshop', 'Community Service'
+    StartDate DATE NOT NULL,
+    EndDate DATE,
+    Location NVARCHAR(200),
+    Budget DECIMAL(10,2) DEFAULT 0,
+    ActualCost DECIMAL(10,2) DEFAULT 0,
+    ParticipantsCount INT DEFAULT 0,
+    Status NVARCHAR(20) NOT NULL DEFAULT 'Planned', -- 'Planned', 'InProgress', 'Completed', 'Cancelled'
+    Outcome NVARCHAR(1000),
+    CreatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    IsDeleted BIT NOT NULL DEFAULT 0,
+    RowVersion ROWVERSION NOT NULL,
+
+    CONSTRAINT FK_ClubActivities_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(Id),
+    CONSTRAINT FK_ClubActivities_Schools FOREIGN KEY (SchoolId) REFERENCES Schools(Id),
+    CONSTRAINT FK_ClubActivities_Clubs FOREIGN KEY (ClubId) REFERENCES Clubs(Id)
+);
+
+-- ========================================
+-- STUDENT LEADERSHIP MODULE
+-- ========================================
+
+CREATE TABLE LeadershipPositions (
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    TenantId UNIQUEIDENTIFIER NOT NULL,
+    SchoolId UNIQUEIDENTIFIER NOT NULL,
+    Title NVARCHAR(100) NOT NULL,
+    Description NVARCHAR(1000),
+    PositionType NVARCHAR(50) NOT NULL, -- 'Prefect', 'Class Monitor', 'Head Girl', 'Head Boy', 'House Captain', 'Club President'
+    Level NVARCHAR(50) NOT NULL, -- 'School', 'Grade', 'Class', 'House', 'Club'
+    HierarchyOrder INT NOT NULL DEFAULT 0,
+    Responsibilities NVARCHAR(1000),
+    Qualifications NVARCHAR(500),
+    SelectionProcess NVARCHAR(500),
+    TermDuration NVARCHAR(50), -- 'Academic Year', 'Semester', 'Term'
+    IsActive BIT NOT NULL DEFAULT 1,
+    CreatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    IsDeleted BIT NOT NULL DEFAULT 0,
+    RowVersion ROWVERSION NOT NULL,
+
+    CONSTRAINT FK_LeadershipPositions_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(Id),
+    CONSTRAINT FK_LeadershipPositions_Schools FOREIGN KEY (SchoolId) REFERENCES Schools(Id)
+);
+
+CREATE TABLE StudentLeadershipAssignments (
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    TenantId UNIQUEIDENTIFIER NOT NULL,
+    SchoolId UNIQUEIDENTIFIER NOT NULL,
+    StudentId UNIQUEIDENTIFIER NOT NULL,
+    LeadershipPositionId UNIQUEIDENTIFIER NOT NULL,
+    AcademicYearId UNIQUEIDENTIFIER NOT NULL,
+    GradeId UNIQUEIDENTIFIER,
+    ClassId UNIQUEIDENTIFIER,
+    HouseId UNIQUEIDENTIFIER,
+    ClubId UNIQUEIDENTIFIER,
+    AppointmentDate DATE NOT NULL,
+    EndDate DATE,
+    Status NVARCHAR(20) NOT NULL DEFAULT 'Active', -- 'Active', 'Inactive', 'Suspended', 'Terminated', 'Graduated'
+    AppointmentType NVARCHAR(50) NOT NULL DEFAULT 'Elected', -- 'Elected', 'Appointed', 'Selected'
+    AppointedByStaffId UNIQUEIDENTIFIER,
+    ReasonForAppointment NVARCHAR(500),
+    ReasonForTermination NVARCHAR(500),
+    PerformanceRating DECIMAL(3,2), -- 1.00 to 5.00
+    DutiesFulfilled NVARCHAR(1000),
+    CreatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    IsDeleted BIT NOT NULL DEFAULT 0,
+    RowVersion ROWVERSION NOT NULL,
+
+    CONSTRAINT FK_StudentLeadershipAssignments_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(Id),
+    CONSTRAINT FK_StudentLeadershipAssignments_Schools FOREIGN KEY (SchoolId) REFERENCES Schools(Id),
+    CONSTRAINT FK_StudentLeadershipAssignments_Students FOREIGN KEY (StudentId) REFERENCES Students(Id),
+    CONSTRAINT FK_StudentLeadershipAssignments_LeadershipPositions FOREIGN KEY (LeadershipPositionId) REFERENCES LeadershipPositions(Id),
+    CONSTRAINT FK_StudentLeadershipAssignments_AcademicYears FOREIGN KEY (AcademicYearId) REFERENCES AcademicYears(Id),
+    CONSTRAINT FK_StudentLeadershipAssignments_Grades FOREIGN KEY (GradeId) REFERENCES Grades(Id),
+    CONSTRAINT FK_StudentLeadershipAssignments_Classes FOREIGN KEY (ClassId) REFERENCES Classes(Id),
+    CONSTRAINT FK_StudentLeadershipAssignments_Houses FOREIGN KEY (HouseId) REFERENCES Houses(Id),
+    CONSTRAINT FK_StudentLeadershipAssignments_Clubs FOREIGN KEY (ClubId) REFERENCES Clubs(Id),
+    CONSTRAINT FK_StudentLeadershipAssignments_AppointedBy FOREIGN KEY (AppointedByStaffId) REFERENCES StaffMembers(Id),
+    CONSTRAINT UQ_StudentLeadershipAssignments_PositionStudentYear UNIQUE (LeadershipPositionId, StudentId, AcademicYearId)
+);
+
+CREATE TABLE LeadershipDuties (
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    TenantId UNIQUEIDENTIFIER NOT NULL,
+    SchoolId UNIQUEIDENTIFIER NOT NULL,
+    LeadershipPositionId UNIQUEIDENTIFIER NOT NULL,
+    DutyTitle NVARCHAR(200) NOT NULL,
+    DutyDescription NVARCHAR(1000),
+    Frequency NVARCHAR(50) NOT NULL, -- 'Daily', 'Weekly', 'Monthly', 'As Needed'
+    Priority NVARCHAR(20) NOT NULL DEFAULT 'Medium', -- 'High', 'Medium', 'Low'
+    EstimatedTimeMinutes INT DEFAULT 30,
+    IsRecurring BIT NOT NULL DEFAULT 0,
+    IsActive BIT NOT NULL DEFAULT 1,
+    CreatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    IsDeleted BIT NOT NULL DEFAULT 0,
+    RowVersion ROWVERSION NOT NULL,
+
+    CONSTRAINT FK_LeadershipDuties_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(Id),
+    CONSTRAINT FK_LeadershipDuties_Schools FOREIGN KEY (SchoolId) REFERENCES Schools(Id),
+    CONSTRAINT FK_LeadershipDuties_LeadershipPositions FOREIGN KEY (LeadershipPositionId) REFERENCES LeadershipPositions(Id)
+);
+
+CREATE TABLE LeadershipDutyLogs (
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    TenantId UNIQUEIDENTIFIER NOT NULL,
+    SchoolId UNIQUEIDENTIFIER NOT NULL,
+    StudentLeadershipAssignmentId UNIQUEIDENTIFIER NOT NULL,
+    LeadershipDutyId UNIQUEIDENTIFIER NOT NULL,
+    DutyDate DATE NOT NULL,
+    StartTime TIME,
+    EndTime TIME,
+    DurationMinutes INT,
+    Status NVARCHAR(20) NOT NULL DEFAULT 'Completed', -- 'Completed', 'Incomplete', 'Skipped', 'Postponed'
+    PerformanceNotes NVARCHAR(1000),
+    SupervisorStaffId UNIQUEIDENTIFIER,
+    SupervisorRating DECIMAL(3,2), -- 1.00 to 5.00
+    SupervisorComments NVARCHAR(500),
+    CreatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    IsDeleted BIT NOT NULL DEFAULT 0,
+    RowVersion ROWVERSION NOT NULL,
+
+    CONSTRAINT FK_LeadershipDutyLogs_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(Id),
+    CONSTRAINT FK_LeadershipDutyLogs_Schools FOREIGN KEY (SchoolId) REFERENCES Schools(Id),
+    CONSTRAINT FK_LeadershipDutyLogs_StudentLeadershipAssignments FOREIGN KEY (StudentLeadershipAssignmentId) REFERENCES StudentLeadershipAssignments(Id),
+    CONSTRAINT FK_LeadershipDutyLogs_LeadershipDuties FOREIGN KEY (LeadershipDutyId) REFERENCES LeadershipDuties(Id),
+    CONSTRAINT FK_LeadershipDutyLogs_Supervisor FOREIGN KEY (SupervisorStaffId) REFERENCES StaffMembers(Id)
+);
+
+-- ========================================
+-- AWARDS AND REWARDS MODULE
+-- ========================================
+
+CREATE TABLE AwardCategories (
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    TenantId UNIQUEIDENTIFIER NOT NULL,
+    SchoolId UNIQUEIDENTIFIER NOT NULL,
+    Name NVARCHAR(100) NOT NULL,
+    Description NVARCHAR(500),
+    CategoryType NVARCHAR(50) NOT NULL, -- 'Academic', 'Sports', 'Leadership', 'Club', 'Attendance', 'Conduct', 'Special'
+    AwardType NVARCHAR(50) NOT NULL, -- 'Certificate', 'Medal', 'Trophy', 'Prize', 'Scholarship'
+    SelectionCriteria NVARCHAR(1000),
+    AwardFrequency NVARCHAR(50) NOT NULL, -- 'Weekly', 'Monthly', 'Termly', 'Yearly', 'Event-based'
+    IsActive BIT NOT NULL DEFAULT 1,
+    CreatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    IsDeleted BIT NOT NULL DEFAULT 0,
+    RowVersion ROWVERSION NOT NULL,
+
+    CONSTRAINT FK_AwardCategories_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(Id),
+    CONSTRAINT FK_AwardCategories_Schools FOREIGN KEY (SchoolId) REFERENCES Schools(Id)
+);
+
+CREATE TABLE Awards (
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    TenantId UNIQUEIDENTIFIER NOT NULL,
+    SchoolId UNIQUEIDENTIFIER NOT NULL,
+    AwardCategoryId UNIQUEIDENTIFIER NOT NULL,
+    Name NVARCHAR(200) NOT NULL,
+    Description NVARCHAR(1000),
+    AwardLevel NVARCHAR(50) NOT NULL, -- 'School', 'Grade', 'Class', 'Subject'
+    Value DECIMAL(10,2) DEFAULT 0, -- Monetary value if applicable
+    PointsValue INT DEFAULT 0,
+    CertificateTemplate NVARCHAR(500),
+    PhysicalAward NVARCHAR(50), -- 'Certificate', 'Medal', 'Trophy', 'Plaque', 'Badge'
+    AcademicYearId UNIQUEIDENTIFIER NOT NULL,
+    TermId UNIQUEIDENTIFIER,
+    IsActive BIT NOT NULL DEFAULT 1,
+    CreatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    IsDeleted BIT NOT NULL DEFAULT 0,
+    RowVersion ROWVERSION NOT NULL,
+
+    CONSTRAINT FK_Awards_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(Id),
+    CONSTRAINT FK_Awards_Schools FOREIGN KEY (SchoolId) REFERENCES Schools(Id),
+    CONSTRAINT FK_Awards_AwardCategories FOREIGN KEY (AwardCategoryId) REFERENCES AwardCategories(Id),
+    CONSTRAINT FK_Awards_AcademicYears FOREIGN KEY (AcademicYearId) REFERENCES AcademicYears(Id),
+    CONSTRAINT FK_Awards_Terms FOREIGN KEY (TermId) REFERENCES Terms(Id)
+);
+
+CREATE TABLE StudentAwards (
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    TenantId UNIQUEIDENTIFIER NOT NULL,
+    SchoolId UNIQUEIDENTIFIER NOT NULL,
+    AwardId UNIQUEIDENTIFIER NOT NULL,
+    StudentId UNIQUEIDENTIFIER NOT NULL,
+    AcademicYearId UNIQUEIDENTIFIER NOT NULL,
+    TermId UNIQUEIDENTIFIER,
+    AwardDate DATE NOT NULL,
+    CeremonyDate DATE,
+    CeremonyName NVARCHAR(200),
+    Reason NVARCHAR(1000),
+    AchievementDetails NVARCHAR(1000),
+    Ranking NVARCHAR(50), -- '1st', '2nd', '3rd', 'Honorable Mention', etc.
+    CertificateNumber NVARCHAR(50),
+    IssuedByStaffId UNIQUEIDENTIFIER,
+    PresentedByStaffId UNIQUEIDENTIFIER,
+    CertificateIssued BIT NOT NULL DEFAULT 0,
+    PhysicalAwardIssued BIT NOT NULL DEFAULT 0,
+    PointsAwarded INT DEFAULT 0,
+    Status NVARCHAR(20) NOT NULL DEFAULT 'Awarded', -- 'Awarded', 'Pending', 'Declined', 'Revoked'
+    CreatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    IsDeleted BIT NOT NULL DEFAULT 0,
+    RowVersion ROWVERSION NOT NULL,
+
+    CONSTRAINT FK_StudentAwards_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(Id),
+    CONSTRAINT FK_StudentAwards_Schools FOREIGN KEY (SchoolId) REFERENCES Schools(Id),
+    CONSTRAINT FK_StudentAwards_Awards FOREIGN KEY (AwardId) REFERENCES Awards(Id),
+    CONSTRAINT FK_StudentAwards_Students FOREIGN KEY (StudentId) REFERENCES Students(Id),
+    CONSTRAINT FK_StudentAwards_AcademicYears FOREIGN KEY (AcademicYearId) REFERENCES AcademicYears(Id),
+    CONSTRAINT FK_StudentAwards_Terms FOREIGN KEY (TermId) REFERENCES Terms(Id),
+    CONSTRAINT FK_StudentAwards_IssuedBy FOREIGN KEY (IssuedByStaffId) REFERENCES StaffMembers(Id),
+    CONSTRAINT FK_StudentAwards_PresentedBy FOREIGN KEY (PresentedByStaffId) REFERENCES StaffMembers(Id),
+    CONSTRAINT UQ_StudentAwards_AwardStudentYear UNIQUE (AwardId, StudentId, AcademicYearId)
+);
+
+CREATE TABLE PrizeGivingCeremonies (
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    TenantId UNIQUEIDENTIFIER NOT NULL,
+    SchoolId UNIQUEIDENTIFIER NOT NULL,
+    Name NVARCHAR(200) NOT NULL,
+    Description NVARCHAR(1000),
+    CeremonyType NVARCHAR(50) NOT NULL, -- 'Graduation', 'Awards Day', 'Sports Day', 'Annual Prize Giving'
+    CeremonyDate DATE NOT NULL,
+    StartTime TIME NOT NULL,
+    EndTime TIME,
+    Venue NVARCHAR(200),
+    OrganizerStaffId UNIQUEIDENTIFIER,
+    MasterOfCeremonies NVARCHAR(200),
+    GuestOfHonor NVARCHAR(200),
+    ExpectedAttendees INT DEFAULT 0,
+    ActualAttendees INT DEFAULT 0,
+    Status NVARCHAR(20) NOT NULL DEFAULT 'Planned', -- 'Planned', 'InProgress', 'Completed', 'Cancelled'
+    Program NVARCHAR(2000), -- Ceremony program/agenda
+    Notes NVARCHAR(1000),
+    CreatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    IsDeleted BIT NOT NULL DEFAULT 0,
+    RowVersion ROWVERSION NOT NULL,
+
+    CONSTRAINT FK_PrizeGivingCeremonies_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(Id),
+    CONSTRAINT FK_PrizeGivingCeremonies_Schools FOREIGN KEY (SchoolId) REFERENCES Schools(Id),
+    CONSTRAINT FK_PrizeGivingCeremonies_Organizer FOREIGN KEY (OrganizerStaffId) REFERENCES StaffMembers(Id)
+);
+
+CREATE TABLE CeremonyAwards (
+    Id UNIQUEIDENTIFIER PRIMARY KEY,
+    TenantId UNIQUEIDENTIFIER NOT NULL,
+    SchoolId UNIQUEIDENTIFIER NOT NULL,
+    PrizeGivingCeremonyId UNIQUEIDENTIFIER NOT NULL,
+    StudentAwardId UNIQUEIDENTIFIER NOT NULL,
+    PresentationOrder INT DEFAULT 0,
+    PresenterStaffId UNIQUEIDENTIFIER,
+    PresentationTime TIME,
+    PhotoTaken BIT NOT NULL DEFAULT 0,
+    PhotoPath NVARCHAR(500),
+    SpecialNotes NVARCHAR(500),
+    CreatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    UpdatedAtUtc DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    IsDeleted BIT NOT NULL DEFAULT 0,
+    RowVersion ROWVERSION NOT NULL,
+
+    CONSTRAINT FK_CeremonyAwards_Tenants FOREIGN KEY (TenantId) REFERENCES Tenants(Id),
+    CONSTRAINT FK_CeremonyAwards_Schools FOREIGN KEY (SchoolId) REFERENCES Schools(Id),
+    CONSTRAINT FK_CeremonyAwards_PrizeGivingCeremonies FOREIGN KEY (PrizeGivingCeremonyId) REFERENCES PrizeGivingCeremonies(Id),
+    CONSTRAINT FK_CeremonyAwards_StudentAwards FOREIGN KEY (StudentAwardId) REFERENCES StudentAwards(Id),
+    CONSTRAINT FK_CeremonyAwards_Presenter FOREIGN KEY (PresenterStaffId) REFERENCES StaffMembers(Id),
+    CONSTRAINT UQ_CeremonyAwards_CeremonyAward UNIQUE (PrizeGivingCeremonyId, StudentAwardId)
+);
+
+-- ========================================
 -- SAMPLE DATA INSERTS
 -- ========================================
 

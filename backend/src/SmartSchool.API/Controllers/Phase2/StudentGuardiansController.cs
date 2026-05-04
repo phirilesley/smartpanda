@@ -1,4 +1,14 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartSchool.API.Security;
@@ -9,10 +19,35 @@ namespace SmartSchool.API.Controllers.Phase2;
 
 [ApiController]
 [Route("api/students/links")]
+[Route("api/student-guardians")]
 [Authorize(Policy = PolicyNames.StudentsManage)]
 [Authorize(Policy = PolicyNames.SchoolAccess)]
 public class StudentGuardiansController(SmartSchoolDbContext dbContext) : ControllerBase
 {
+    [HttpGet]
+    public async Task<ActionResult<IReadOnlyList<StudentGuardian>>> GetAll([FromQuery] Guid tenantId, [FromQuery] Guid schoolId, [FromQuery] Guid? studentId, CancellationToken cancellationToken)
+    {
+        if (tenantId == Guid.Empty || schoolId == Guid.Empty)
+        {
+            return BadRequest("tenantId and schoolId are required.");
+        }
+
+        if (!User.CanAccessTenant(tenantId))
+        {
+            return Forbid();
+        }
+
+        var query = dbContext.StudentGuardians.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.SchoolId == schoolId);
+        if (studentId.HasValue && studentId.Value != Guid.Empty)
+        {
+            query = query.Where(x => x.StudentId == studentId.Value);
+        }
+
+        var items = await query.OrderByDescending(x => x.IsPrimaryContact).ToListAsync(cancellationToken);
+        return Ok(items);
+    }
+
     [HttpGet("{studentId:guid}")]
     public async Task<ActionResult<IReadOnlyList<StudentGuardian>>> GetByStudent(Guid studentId, CancellationToken cancellationToken)
     {
@@ -70,7 +105,7 @@ public class StudentGuardiansController(SmartSchoolDbContext dbContext) : Contro
             return Conflict("Student-guardian link already exists.");
         }
 
-        if (request.IsPrimaryContact)
+        if (request.ResolveIsPrimary())
         {
             var existingPrimary = await dbContext.StudentGuardians
                 .Where(x => x.TenantId == request.TenantId && x.SchoolId == request.SchoolId && x.StudentId == request.StudentId && x.IsPrimaryContact)
@@ -88,7 +123,7 @@ public class StudentGuardiansController(SmartSchoolDbContext dbContext) : Contro
             SchoolId = request.SchoolId,
             StudentId = request.StudentId,
             GuardianId = request.GuardianId,
-            IsPrimaryContact = request.IsPrimaryContact
+            IsPrimaryContact = request.ResolveIsPrimary()
         };
 
         dbContext.StudentGuardians.Add(link);
@@ -98,5 +133,15 @@ public class StudentGuardiansController(SmartSchoolDbContext dbContext) : Contro
     }
 }
 
-public sealed record LinkStudentGuardianRequest(Guid TenantId, Guid SchoolId, Guid StudentId, Guid GuardianId, bool IsPrimaryContact);
+public sealed class LinkStudentGuardianRequest
+{
+    public Guid TenantId { get; set; }
+    public Guid SchoolId { get; set; }
+    public Guid StudentId { get; set; }
+    public Guid GuardianId { get; set; }
+    public bool? IsPrimaryContact { get; set; }
+    public bool? IsPrimary { get; set; }
+
+    public bool ResolveIsPrimary() => IsPrimaryContact ?? IsPrimary ?? false;
+}
 

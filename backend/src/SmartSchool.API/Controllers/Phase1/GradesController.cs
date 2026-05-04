@@ -1,4 +1,15 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartSchool.API.Security;
@@ -9,6 +20,7 @@ namespace SmartSchool.API.Controllers.Phase1;
 
 [ApiController]
 [Route("api/academics/grades")]
+[Route("api/grades")]
 [Authorize(Policy = PolicyNames.AcademicsManage)]
 [Authorize(Policy = PolicyNames.SchoolAccess)]
 public class GradesController(SmartSchoolDbContext dbContext, ILogger<GradesController> logger) : ControllerBase
@@ -55,13 +67,27 @@ public class GradesController(SmartSchoolDbContext dbContext, ILogger<GradesCont
             return Forbid();
         }
 
+        var resolvedOrder = request.ResolveGradeOrder();
+        var existingExact = await dbContext.Grades.AsNoTracking().FirstOrDefaultAsync(x =>
+            x.TenantId == request.TenantId &&
+            x.SchoolId == request.SchoolId &&
+            x.GradeOrder == resolvedOrder &&
+            x.Name == request.Name.Trim(),
+            cancellationToken);
+        if (existingExact is not null)
+        {
+            return Ok(existingExact);
+        }
+
         var exists = await dbContext.Grades.AsNoTracking().AnyAsync(x =>
-            x.TenantId == request.TenantId && x.SchoolId == request.SchoolId && x.GradeOrder == request.GradeOrder,
+            x.TenantId == request.TenantId &&
+            x.SchoolId == request.SchoolId &&
+            (x.GradeOrder == resolvedOrder || x.Name == request.Name.Trim()),
             cancellationToken);
 
         if (exists)
         {
-            return Conflict("Grade order already exists for this school.");
+            return Conflict("Grade already exists for this school.");
         }
 
         var entity = new Grade
@@ -69,15 +95,15 @@ public class GradesController(SmartSchoolDbContext dbContext, ILogger<GradesCont
             TenantId = request.TenantId,
             SchoolId = request.SchoolId,
             Name = request.Name.Trim(),
-            GradeOrder = request.GradeOrder,
-            IsTerminalGrade = request.IsTerminalGrade,
+            GradeOrder = resolvedOrder,
+            IsTerminalGrade = request.IsTerminalGrade ?? false,
             IsActive = true
         };
 
         dbContext.Grades.Add(entity);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return CreatedAtAction(nameof(GetById), new { id = entity.Id }, entity);
+        return Ok(entity);
     }
 
     [HttpGet("{id:guid}")]
@@ -112,16 +138,19 @@ public class GradesController(SmartSchoolDbContext dbContext, ILogger<GradesCont
         }
 
         var duplicate = await dbContext.Grades.AnyAsync(
-            x => x.Id != id && x.TenantId == grade.TenantId && x.SchoolId == grade.SchoolId && x.GradeOrder == request.GradeOrder,
+            x => x.Id != id &&
+                 x.TenantId == grade.TenantId &&
+                 x.SchoolId == grade.SchoolId &&
+                 (x.GradeOrder == request.ResolveGradeOrder() || x.Name == request.Name.Trim()),
             cancellationToken);
         if (duplicate)
         {
-            return Conflict("Grade order already exists for this school.");
+            return Conflict("Grade already exists for this school.");
         }
 
         grade.Name = request.Name.Trim();
-        grade.GradeOrder = request.GradeOrder;
-        grade.IsTerminalGrade = request.IsTerminalGrade;
+        grade.GradeOrder = request.ResolveGradeOrder();
+        grade.IsTerminalGrade = request.IsTerminalGrade ?? false;
         grade.IsActive = request.IsActive;
         grade.UpdatedAtUtc = DateTime.UtcNow;
 
@@ -163,6 +192,25 @@ public class GradesController(SmartSchoolDbContext dbContext, ILogger<GradesCont
     }
 }
 
-public sealed record CreateGradeRequest(Guid TenantId, Guid SchoolId, string Name, int GradeOrder, bool IsTerminalGrade);
+public sealed class CreateGradeRequest
+{
+    public Guid TenantId { get; set; }
+    public Guid SchoolId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public int? GradeOrder { get; set; }
+    public int? Level { get; set; }
+    public bool? IsTerminalGrade { get; set; }
 
-public sealed record UpdateGradeRequest(string Name, int GradeOrder, bool IsTerminalGrade, bool IsActive);
+    public int ResolveGradeOrder() => GradeOrder ?? Level ?? 0;
+}
+
+public sealed class UpdateGradeRequest
+{
+    public string Name { get; set; } = string.Empty;
+    public int? GradeOrder { get; set; }
+    public int? Level { get; set; }
+    public bool? IsTerminalGrade { get; set; }
+    public bool IsActive { get; set; } = true;
+
+    public int ResolveGradeOrder() => GradeOrder ?? Level ?? 0;
+}

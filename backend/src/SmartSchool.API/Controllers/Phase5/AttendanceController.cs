@@ -1,9 +1,21 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartSchool.API.Security;
 using SmartSchool.Domain.Modules.Attendance;
 using SmartSchool.Persistence.Data;
+using SmartSchool.API.Services;
 
 namespace SmartSchool.API.Controllers.Phase5;
 
@@ -11,7 +23,7 @@ namespace SmartSchool.API.Controllers.Phase5;
 [Route("api/attendance")]
 [Authorize(Policy = PolicyNames.OperationsManage)]
 [Authorize(Policy = PolicyNames.SchoolAccess)]
-public class AttendanceController(SmartSchoolDbContext dbContext) : ControllerBase
+public class AttendanceController(SmartSchoolDbContext dbContext, CacheService cacheService) : ControllerBase
 {
     [HttpPost("sessions")]
     public async Task<ActionResult<AttendanceSession>> CreateSession([FromBody] CreateAttendanceSessionRequest request, CancellationToken cancellationToken)
@@ -26,7 +38,7 @@ public class AttendanceController(SmartSchoolDbContext dbContext) : ControllerBa
         var exists = await dbContext.AttendanceSessions.AsNoTracking().AnyAsync(x =>
             x.TenantId == request.TenantId && x.SchoolId == request.SchoolId &&
             x.AcademicYearId == request.AcademicYearId && x.TermId == request.TermId &&
-            x.AttendanceDate.Date == request.AttendanceDate.Date && x.SessionType == request.SessionType.Trim(),
+            x.AttendanceDate.Date == request.ResolveAttendanceDate().Date && x.SessionType == request.ResolveSessionType().Trim(),
             cancellationToken);
 
         if (exists) return Conflict("Attendance session already exists for this date/session type.");
@@ -37,8 +49,8 @@ public class AttendanceController(SmartSchoolDbContext dbContext) : ControllerBa
             SchoolId = request.SchoolId,
             AcademicYearId = request.AcademicYearId,
             TermId = request.TermId,
-            AttendanceDate = request.AttendanceDate.Date,
-            SessionType = request.SessionType.Trim()
+            AttendanceDate = request.ResolveAttendanceDate().Date,
+            SessionType = request.ResolveSessionType().Trim()
         };
 
         dbContext.AttendanceSessions.Add(entity);
@@ -165,6 +177,14 @@ public class AttendanceController(SmartSchoolDbContext dbContext) : ControllerBa
 
         if (!User.CanAccessTenant(tenantId)) return Forbid();
 
+        // 🚀 Cache attendance summary reports for 15 minutes (longer for reports)
+        var cacheKey = CacheService.CacheKeys.AttendanceSummary(tenantId, schoolId, DateTime.MinValue) + $":report:{academicYearId}:{termId}:{gradeId}";
+        var cached = await cacheService.GetAsync<IReadOnlyList<StudentAttendanceSummaryResponse>>(cacheKey, cancellationToken);
+        if (cached is not null)
+        {
+            return Ok(cached);
+        }
+
         var enrollments = await dbContext.StudentEnrollments.AsNoTracking()
             .Where(x => x.TenantId == tenantId && x.SchoolId == schoolId && x.AcademicYearId == academicYearId && x.TermId == termId && x.GradeId == gradeId)
             .ToListAsync(cancellationToken);
@@ -200,6 +220,7 @@ public class AttendanceController(SmartSchoolDbContext dbContext) : ControllerBa
                 pct);
         }).OrderBy(x => x.StudentName).ToList();
 
+        await cacheService.SetAsync(cacheKey, result, cacheService._options.LongTtl, cancellationToken);
         return Ok(result);
     }
 
@@ -214,6 +235,51 @@ public class AttendanceController(SmartSchoolDbContext dbContext) : ControllerBa
         if (termId != Guid.Empty) query = query.Where(x => x.TermId == termId);
 
         var items = await query.OrderByDescending(x => x.AttendanceDate).ToListAsync(cancellationToken);
+        return Ok(items);
+    }
+
+    [HttpGet("sessions/{id:guid}")]
+    public async Task<ActionResult<AttendanceSession>> GetSession(Guid id, CancellationToken cancellationToken)
+    {
+        var item = await dbContext.AttendanceSessions.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (item is null) return NotFound();
+        if (!User.CanAccessTenant(item.TenantId)) return Forbid();
+        return Ok(item);
+    }
+
+    [HttpGet("student")]
+    public async Task<ActionResult<IReadOnlyList<StudentAttendance>>> GetStudentAttendance([FromQuery] Guid tenantId, [FromQuery] Guid schoolId, [FromQuery] DateTime? date, CancellationToken cancellationToken)
+    {
+        if (tenantId == Guid.Empty || schoolId == Guid.Empty) return BadRequest("tenantId and schoolId are required.");
+        if (!User.CanAccessTenant(tenantId)) return Forbid();
+
+        var query = dbContext.StudentAttendances.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.SchoolId == schoolId);
+        if (date.HasValue)
+        {
+            var d = date.Value.Date;
+            query = query.Where(x => dbContext.AttendanceSessions.Any(s => s.Id == x.AttendanceSessionId && s.AttendanceDate == d));
+        }
+
+        var items = await query.OrderByDescending(x => x.CreatedAtUtc).ToListAsync(cancellationToken);
+        return Ok(items);
+    }
+
+    [HttpGet("staff")]
+    public async Task<ActionResult<IReadOnlyList<StaffAttendance>>> GetStaffAttendance([FromQuery] Guid tenantId, [FromQuery] Guid schoolId, [FromQuery] DateTime? date, CancellationToken cancellationToken)
+    {
+        if (tenantId == Guid.Empty || schoolId == Guid.Empty) return BadRequest("tenantId and schoolId are required.");
+        if (!User.CanAccessTenant(tenantId)) return Forbid();
+
+        var query = dbContext.StaffAttendances.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.SchoolId == schoolId);
+        if (date.HasValue)
+        {
+            var d = date.Value.Date;
+            query = query.Where(x => dbContext.AttendanceSessions.Any(s => s.Id == x.AttendanceSessionId && s.AttendanceDate == d));
+        }
+
+        var items = await query.OrderByDescending(x => x.CreatedAtUtc).ToListAsync(cancellationToken);
         return Ok(items);
     }
 
@@ -264,7 +330,24 @@ public class AttendanceController(SmartSchoolDbContext dbContext) : ControllerBa
     }
 }
 
-public sealed record CreateAttendanceSessionRequest(Guid TenantId, Guid SchoolId, Guid AcademicYearId, Guid TermId, DateTime AttendanceDate, string SessionType);
+public sealed class CreateAttendanceSessionRequest
+{
+    public Guid TenantId { get; set; }
+    public Guid SchoolId { get; set; }
+    public Guid AcademicYearId { get; set; }
+    public Guid TermId { get; set; }
+    public DateTime AttendanceDate { get; set; }
+    public DateTime? SessionDate { get; set; }
+    public string? SessionType { get; set; }
+    public Guid? GradeId { get; set; }
+    public Guid? StreamId { get; set; }
+    public Guid? SubjectId { get; set; }
+    public TimeSpan? StartTime { get; set; }
+    public TimeSpan? EndTime { get; set; }
+
+    public DateTime ResolveAttendanceDate() => AttendanceDate == default ? (SessionDate ?? DateTime.UtcNow.Date) : AttendanceDate;
+    public string ResolveSessionType() => string.IsNullOrWhiteSpace(SessionType) ? "Daily" : SessionType;
+}
 public sealed record MarkStudentAttendanceRequest(Guid TenantId, Guid SchoolId, Guid AttendanceSessionId, List<MarkStudentAttendanceItem> Items);
 public sealed record MarkStudentAttendanceItem(Guid StudentId, Guid EnrollmentId, bool IsPresent, string? Remarks);
 public sealed record MarkStaffAttendanceRequest(Guid TenantId, Guid SchoolId, Guid AttendanceSessionId, List<MarkStaffAttendanceItem> Items);

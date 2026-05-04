@@ -9,6 +9,7 @@ internal static class TestIds
     public static readonly Guid AcademicYear1 = Guid.Parse("10000000-0000-0000-0000-000000000001");
     public static readonly Guid Term1 = Guid.Parse("10000000-0000-0000-0000-000000000002");
     public static readonly Guid Grade1 = Guid.Parse("10000000-0000-0000-0000-000000000003");
+    public static readonly Guid Grade2 = Guid.Parse("10000000-0000-0000-0000-000000000103");
     public static readonly Guid Stream1 = Guid.Parse("10000000-0000-0000-0000-000000000004");
     public static readonly Guid Subject1 = Guid.Parse("10000000-0000-0000-0000-000000000005");
     public static readonly Guid Department1 = Guid.Parse("10000000-0000-0000-0000-000000000006");

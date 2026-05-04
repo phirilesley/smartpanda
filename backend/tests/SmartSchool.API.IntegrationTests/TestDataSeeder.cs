@@ -8,6 +8,7 @@ using SmartSchool.Domain.Modules.Platform;
 using SmartSchool.Domain.Modules.Settings;
 using SmartSchool.Domain.Modules.Students;
 using SmartSchool.Domain.Modules.Files;
+using SmartSchool.Domain.Modules.Security;
 using SmartSchool.Persistence.Data;
 
 namespace SmartSchool.API.IntegrationTests;
@@ -58,6 +59,16 @@ internal static class TestDataSeeder
             SchoolId = TestIds.School1,
             Name = "Grade 5",
             GradeOrder = 5,
+            IsActive = true
+        });
+
+        dbContext.Grades.Add(new Grade
+        {
+            Id = TestIds.Grade2,
+            TenantId = TestIds.Tenant1,
+            SchoolId = TestIds.School1,
+            Name = "Grade 6",
+            GradeOrder = 6,
             IsActive = true
         });
 
@@ -193,6 +204,26 @@ internal static class TestDataSeeder
             new TenantFeatureFlag { TenantId = TestIds.Tenant1, FeatureCode = "portal.parent", IsEnabled = true, Description = "Parent portal" },
             new TenantFeatureFlag { TenantId = TestIds.Tenant1, FeatureCode = "portal.student", IsEnabled = true, Description = "Student portal" },
             new TenantFeatureFlag { TenantId = TestIds.Tenant1, FeatureCode = "portal.staff", IsEnabled = true, Description = "Staff portal" });
+
+        dbContext.UserSchoolAccesses.AddRange(
+            new UserSchoolAccess
+            {
+                TenantId = TestIds.Tenant1,
+                SchoolId = TestIds.School1,
+                UserId = TestIds.User1,
+                CanRead = true,
+                CanWrite = true,
+                CanApprove = true
+            },
+            new UserSchoolAccess
+            {
+                TenantId = TestIds.Tenant1,
+                SchoolId = TestIds.School1,
+                UserId = TestIds.User2,
+                CanRead = true,
+                CanWrite = true,
+                CanApprove = false
+            });
 
         await dbContext.SaveChangesAsync();
     }

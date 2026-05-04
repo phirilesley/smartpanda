@@ -1,3 +1,14 @@
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -155,6 +166,9 @@ public class EventsController(SmartSchoolDbContext dbContext) : ControllerBase
     public async Task<ActionResult<EventRegistrationResult>> RegisterParticipants(Guid eventId, [FromBody] RegisterEventParticipantsRequest request, CancellationToken cancellationToken)
     {
         if (!User.CanAccessTenant(request.TenantId)) return Forbid();
+        var isLegacySinglePayload = request.Participants is null || request.Participants.Count == 0;
+        var participants = request.ResolveParticipants();
+        if (participants.Count == 0) return BadRequest("At least one participant is required.");
 
         var @event = await dbContext.SchoolEvents.FirstOrDefaultAsync(x => x.Id == eventId && !x.IsDeleted, cancellationToken);
         if (@event is null) return NotFound();
@@ -163,14 +177,15 @@ public class EventsController(SmartSchoolDbContext dbContext) : ControllerBase
         var currentCount = await dbContext.EventParticipants.AsNoTracking()
             .CountAsync(x => x.SchoolEventId == eventId && x.TenantId == request.TenantId && x.SchoolId == request.SchoolId && !x.IsDeleted, cancellationToken);
 
-        var capacityCheck = currentCount + request.Participants.Count;
+        var capacityCheck = currentCount + participants.Count;
         if (@event.MaxParticipants.HasValue && capacityCheck > @event.MaxParticipants.Value)
-            return BadRequest($"Event capacity exceeded. Current: {currentCount}, Requested: {request.Participants.Count}, Max: {@event.MaxParticipants}");
+            return BadRequest($"Event capacity exceeded. Current: {currentCount}, Requested: {participants.Count}, Max: {@event.MaxParticipants}");
 
         var registeredCount = 0;
         var skippedCount = 0;
+        EventParticipant? createdSingleParticipant = null;
 
-        foreach (var participant in request.Participants)
+        foreach (var participant in participants)
         {
             var exists = await dbContext.EventParticipants.AsNoTracking()
                 .AnyAsync(x => x.SchoolEventId == eventId && x.TenantId == request.TenantId && x.SchoolId == request.SchoolId &&
@@ -197,10 +212,19 @@ public class EventsController(SmartSchoolDbContext dbContext) : ControllerBase
             };
 
             dbContext.EventParticipants.Add(entity);
+            if (isLegacySinglePayload && createdSingleParticipant is null)
+            {
+                createdSingleParticipant = entity;
+            }
             registeredCount++;
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        if (isLegacySinglePayload && createdSingleParticipant is not null)
+        {
+            return Ok(createdSingleParticipant);
+        }
+
         return Ok(new EventRegistrationResult(registeredCount, skippedCount));
     }
 
@@ -209,6 +233,8 @@ public class EventsController(SmartSchoolDbContext dbContext) : ControllerBase
     public async Task<ActionResult<EventRegistrationResult>> RegisterEventParticipants(Guid eventId, [FromBody] RegisterEventParticipantsRequest request, CancellationToken cancellationToken)
     {
         if (!User.CanAccessTenant(request.TenantId)) return Forbid();
+        var participants = request.ResolveParticipants();
+        if (participants.Count == 0) return BadRequest("At least one participant is required.");
 
         var @event = await dbContext.SchoolEvents.FirstOrDefaultAsync(x => x.Id == eventId && !x.IsDeleted, cancellationToken);
         if (@event is null) return NotFound();
@@ -216,7 +242,7 @@ public class EventsController(SmartSchoolDbContext dbContext) : ControllerBase
 
         var registered = 0;
         var skipped = 0;
-        foreach (var participant in request.Participants)
+        foreach (var participant in participants)
         {
             var exists = await dbContext.EventParticipants.AsNoTracking().AnyAsync(x =>
                 x.SchoolEventId == eventId &&
@@ -375,6 +401,35 @@ public sealed record AddEventParticipantRequest(
 
 public sealed record UpdateEventParticipantAttendanceRequest(Guid TenantId, string AttendanceStatus);
 public sealed record EventParticipantRegistration(Guid? StudentId, Guid? GuardianId, Guid? StaffId, string ParticipantType);
-public sealed record RegisterEventParticipantsRequest(Guid TenantId, Guid SchoolId, List<EventParticipantRegistration> Participants);
+public sealed class RegisterEventParticipantsRequest
+{
+    public Guid TenantId { get; set; }
+    public Guid SchoolId { get; set; }
+    public List<EventParticipantRegistration>? Participants { get; set; }
+
+    // Legacy single-item payload compatibility
+    public Guid? StudentId { get; set; }
+    public Guid? GuardianId { get; set; }
+    public Guid? StaffId { get; set; }
+    public string? ParticipantType { get; set; }
+
+    public List<EventParticipantRegistration> ResolveParticipants()
+    {
+        if (Participants is { Count: > 0 }) return Participants;
+        if (StudentId.HasValue || GuardianId.HasValue || StaffId.HasValue)
+        {
+            return
+            [
+                new EventParticipantRegistration(
+                    StudentId,
+                    GuardianId,
+                    StaffId,
+                    string.IsNullOrWhiteSpace(ParticipantType) ? "Participant" : ParticipantType.Trim())
+            ];
+        }
+
+        return [];
+    }
+}
 public sealed record EventRegistrationResult(int RegisteredCount, int SkippedCount);
 public sealed record EventAnalyticsResponse(int TotalEvents, int UpcomingEvents, int PastEvents, Dictionary<string, int> ParticipationByStatus, Dictionary<string, int> AttendanceByStatus);

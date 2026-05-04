@@ -740,6 +740,666 @@ namespace SmartSchool.Persistence.Migrations
                     b.ToTable("StudentAttendances");
                 });
 
+            modelBuilder.Entity("SmartSchool.Domain.Modules.Awards.Award", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AcademicYearId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AwardCategoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AwardLevel")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CertificateTemplate")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("PhysicalAward")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("PointsValue")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("SchoolId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("TermId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("Value")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AcademicYearId");
+
+                    b.HasIndex("AwardCategoryId");
+
+                    b.HasIndex("TermId");
+
+                    b.HasIndex("TenantId", "SchoolId", "AwardCategoryId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("Awards");
+                });
+
+            modelBuilder.Entity("SmartSchool.Domain.Modules.Awards.AwardCategory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AwardFrequency")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AwardType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CategoryType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<Guid>("SchoolId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("SelectionCriteria")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "SchoolId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("AwardCategories");
+                });
+
+            modelBuilder.Entity("SmartSchool.Domain.Modules.Awards.CeremonyAward", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("PresentationOrder")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("PresenterStaffId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("PrizeGivingCeremonyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SchoolId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("SpecialNotes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("StudentAwardId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "SchoolId", "PrizeGivingCeremonyId", "StudentAwardId")
+                        .IsUnique();
+
+                    b.ToTable("CeremonyAwards");
+                });
+
+            modelBuilder.Entity("SmartSchool.Domain.Modules.Awards.PrizeGivingCeremony", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("CeremonyDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("CeremonyType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<TimeOnly?>("EndTime")
+                        .HasColumnType("time");
+
+                    b.Property<int>("ExpectedAttendees")
+                        .HasColumnType("int");
+
+                    b.Property<string>("GuestOfHonor")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("MasterOfCeremonies")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("OrganizerStaffId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Program")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("SchoolId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<TimeOnly>("StartTime")
+                        .HasColumnType("time");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Venue")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrganizerStaffId");
+
+                    b.HasIndex("TenantId", "SchoolId", "CeremonyDate", "Name")
+                        .IsUnique();
+
+                    b.ToTable("PrizeGivingCeremonies");
+                });
+
+            modelBuilder.Entity("SmartSchool.Domain.Modules.Awards.StudentAward", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AcademicYearId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AchievementDetails")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateOnly>("AwardDate")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("AwardId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly?>("CeremonyDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("CeremonyName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("CertificateIssued")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("CertificateNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid?>("IssuedByStaffId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("PhysicalAwardIssued")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("PointsAwarded")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("PresentedByStaffId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Ranking")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("SchoolId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("StudentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("TermId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AcademicYearId");
+
+                    b.HasIndex("AwardId");
+
+                    b.HasIndex("IssuedByStaffId");
+
+                    b.HasIndex("PresentedByStaffId");
+
+                    b.HasIndex("StudentId");
+
+                    b.HasIndex("TermId");
+
+                    b.HasIndex("TenantId", "SchoolId", "AwardId", "StudentId", "AcademicYearId");
+
+                    b.ToTable("StudentAwards");
+                });
+
+            modelBuilder.Entity("SmartSchool.Domain.Modules.Clubs.Club", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AcademicYearId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AdvisorStaffId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ClubCategoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CoAdvisorStaffId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CurrentMembers")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("MaxMembers")
+                        .HasColumnType("int");
+
+                    b.Property<string>("MeetingLocation")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MeetingSchedule")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("MembershipFee")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("MissionStatement")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Objectives")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("SchoolId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AcademicYearId");
+
+                    b.HasIndex("AdvisorStaffId");
+
+                    b.HasIndex("ClubCategoryId");
+
+                    b.HasIndex("CoAdvisorStaffId");
+
+                    b.HasIndex("TenantId", "SchoolId", "Code")
+                        .IsUnique();
+
+                    b.ToTable("Clubs");
+                });
+
+            modelBuilder.Entity("SmartSchool.Domain.Modules.Clubs.ClubActivity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("ActivityDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("ActivityName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ClubId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("SchoolId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ClubActivities");
+                });
+
+            modelBuilder.Entity("SmartSchool.Domain.Modules.Clubs.ClubCategory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("SchoolId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "SchoolId", "Code")
+                        .IsUnique();
+
+                    b.ToTable("ClubCategories");
+                });
+
+            modelBuilder.Entity("SmartSchool.Domain.Modules.Clubs.ClubMeeting", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Agenda")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ClubId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<TimeOnly?>("EndTime")
+                        .HasColumnType("time");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Location")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateOnly>("MeetingDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("MeetingType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("SchoolId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<TimeOnly>("StartTime")
+                        .HasColumnType("time");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClubId");
+
+                    b.HasIndex("TenantId", "SchoolId", "ClubId", "MeetingDate");
+
+                    b.ToTable("ClubMeetings");
+                });
+
+            modelBuilder.Entity("SmartSchool.Domain.Modules.Clubs.ClubMember", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ClubId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Contribution")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateOnly>("JoinDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("MemberType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("MembershipFeeAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool>("MembershipFeePaid")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Position")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("SchoolId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("StudentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClubId");
+
+                    b.HasIndex("StudentId");
+
+                    b.HasIndex("TenantId", "SchoolId", "ClubId", "StudentId")
+                        .IsUnique();
+
+                    b.ToTable("ClubMembers");
+                });
+
             modelBuilder.Entity("SmartSchool.Domain.Modules.Communication.Announcement", b =>
                 {
                     b.Property<Guid>("Id")
@@ -972,17 +1632,23 @@ namespace SmartSchool.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("EventDateUtc")
+                    b.Property<DateTime>("EndAtUtc")
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
+
+                    b.Property<int?>("MaxParticipants")
+                        .HasColumnType("int");
 
                     b.Property<Guid?>("OrganizerStaffId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("SchoolId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("StartAtUtc")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -996,18 +1662,18 @@ namespace SmartSchool.Persistence.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Venue")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TenantId", "SchoolId", "EventDateUtc", "Title");
+                    b.HasIndex("TenantId", "SchoolId", "Venue", "StartAtUtc", "EndAtUtc");
 
                     b.ToTable("SchoolEvents");
                 });
@@ -2192,6 +2858,110 @@ namespace SmartSchool.Persistence.Migrations
                     b.ToTable("ClinicMedications");
                 });
 
+            modelBuilder.Entity("SmartSchool.Domain.Modules.Health.ClinicPrescription", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ClinicVisitId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FulfilledAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("PrescribedByStaffId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("PrescriptionDateUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("SchoolId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ClinicPrescriptions");
+                });
+
+            modelBuilder.Entity("SmartSchool.Domain.Modules.Health.ClinicPrescriptionItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ClinicMedicationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ClinicPrescriptionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Dosage")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Duration")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Frequency")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Instructions")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("SchoolId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ClinicPrescriptionItems");
+                });
+
             modelBuilder.Entity("SmartSchool.Domain.Modules.Health.ClinicVisit", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2200,6 +2970,9 @@ namespace SmartSchool.Persistence.Migrations
 
                     b.Property<Guid>("AttendedByStaffId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ClosedAtUtc")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Complaint")
                         .IsRequired()
@@ -2221,9 +2994,23 @@ namespace SmartSchool.Persistence.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsReferred")
+                        .HasColumnType("bit");
+
                     b.Property<string>("PatientType")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ReferralFacility")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ReferralReason")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ReferredAtUtc")
+                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("SchoolId")
                         .HasColumnType("uniqueidentifier");
@@ -2256,6 +3043,61 @@ namespace SmartSchool.Persistence.Migrations
                     b.HasIndex("TenantId", "SchoolId", "VisitDateUtc", "PatientType");
 
                     b.ToTable("ClinicVisits");
+                });
+
+            modelBuilder.Entity("SmartSchool.Domain.Modules.Health.HealthActionPlan", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Condition")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("EmergencyContacts")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("HealthProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("PlanDescription")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RequiredActions")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("SchoolId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("TriggerConditions")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("HealthActionPlans");
                 });
 
             modelBuilder.Entity("SmartSchool.Domain.Modules.Health.HealthProfile", b =>
@@ -2794,8 +3636,15 @@ namespace SmartSchool.Persistence.Migrations
                     b.Property<Guid>("ReportedByStaffId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTime?>("ResolvedAtUtc")
+                        .HasColumnType("datetime2");
+
                     b.Property<Guid>("SchoolId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("StudentId")
                         .HasColumnType("uniqueidentifier");
@@ -3131,6 +3980,278 @@ namespace SmartSchool.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("LabFaults");
+                });
+
+            modelBuilder.Entity("SmartSchool.Domain.Modules.Leadership.LeadershipDuty", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DutyTitle")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("LeadershipPositionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("SchoolId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "SchoolId", "LeadershipPositionId", "DutyTitle")
+                        .IsUnique();
+
+                    b.ToTable("LeadershipDuties");
+                });
+
+            modelBuilder.Entity("SmartSchool.Domain.Modules.Leadership.LeadershipDutyLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DurationMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("DutyDate")
+                        .HasColumnType("date");
+
+                    b.Property<TimeOnly?>("EndTime")
+                        .HasColumnType("time");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("LeadershipDutyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PerformanceNotes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("SchoolId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<TimeOnly?>("StartTime")
+                        .HasColumnType("time");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("StudentLeadershipAssignmentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("SupervisorComments")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("SupervisorRating")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid?>("SupervisorStaffId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "SchoolId", "StudentLeadershipAssignmentId", "LeadershipDutyId", "DutyDate");
+
+                    b.ToTable("LeadershipDutyLogs");
+                });
+
+            modelBuilder.Entity("SmartSchool.Domain.Modules.Leadership.LeadershipPosition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("HierarchyOrder")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Level")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PositionType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Qualifications")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Responsibilities")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("SchoolId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("SelectionProcess")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("TermDuration")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "SchoolId", "Title")
+                        .IsUnique();
+
+                    b.ToTable("LeadershipPositions");
+                });
+
+            modelBuilder.Entity("SmartSchool.Domain.Modules.Leadership.StudentLeadershipAssignment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AcademicYearId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AppointedByStaffId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("AppointmentDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("AppointmentType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("ClassId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ClubId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DutiesFulfilled")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<Guid?>("GradeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("HouseId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("LeadershipPositionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("PerformanceRating")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("ReasonForAppointment")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ReasonForTermination")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("SchoolId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("StudentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AcademicYearId");
+
+                    b.HasIndex("AppointedByStaffId");
+
+                    b.HasIndex("GradeId");
+
+                    b.HasIndex("LeadershipPositionId");
+
+                    b.HasIndex("StudentId");
+
+                    b.HasIndex("TenantId", "SchoolId", "StudentId", "LeadershipPositionId", "AcademicYearId")
+                        .IsUnique();
+
+                    b.ToTable("StudentLeadershipAssignments");
                 });
 
             modelBuilder.Entity("SmartSchool.Domain.Modules.Library.Book", b =>
@@ -5049,18 +6170,147 @@ namespace SmartSchool.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("Code")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("DeletedAtUtc")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EquipmentRequired")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsTeamSport")
                         .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<Guid>("SchoolId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Season")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("SportCategoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("TeamSize")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SportCategoryId");
+
+                    b.HasIndex("TenantId", "SchoolId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("Sports");
+                });
+
+            modelBuilder.Entity("SmartSchool.Domain.Modules.Sports.SportAchievement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("AchievementDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Level")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("SchoolId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("SportTeamId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("StudentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SportTeamId");
+
+                    b.HasIndex("StudentId");
+
+                    b.HasIndex("TenantId", "SchoolId", "StudentId", "AchievementDate");
+
+                    b.ToTable("SportAchievements");
+                });
+
+            modelBuilder.Entity("SmartSchool.Domain.Modules.Sports.SportCategory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("SchoolId")
                         .HasColumnType("uniqueidentifier");
@@ -5073,10 +6323,72 @@ namespace SmartSchool.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TenantId", "SchoolId", "Name")
+                    b.HasIndex("TenantId", "SchoolId", "Code")
                         .IsUnique();
 
-                    b.ToTable("Sports");
+                    b.ToTable("SportCategories");
+                });
+
+            modelBuilder.Entity("SmartSchool.Domain.Modules.Sports.SportEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateOnly>("EventDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Opponent")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("SchoolId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("SportId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("SportTeamId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<TimeOnly?>("StartTime")
+                        .HasColumnType("time");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Venue")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "SchoolId", "EventDate", "Venue");
+
+                    b.ToTable("SportEvents");
                 });
 
             modelBuilder.Entity("SmartSchool.Domain.Modules.Sports.SportPlayer", b =>
@@ -5169,27 +6481,61 @@ namespace SmartSchool.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("AcademicYearId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AssistantCoachStaffId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CoachStaffId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("CurrentMembers")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("DeletedAtUtc")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("GradeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("HomeVenue")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<Guid?>("HouseId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<int>("MaxMembers")
+                        .HasColumnType("int");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("PracticeSchedule")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("SchoolId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("SportId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("TeamType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uniqueidentifier");
@@ -5199,10 +6545,88 @@ namespace SmartSchool.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AcademicYearId");
+
+                    b.HasIndex("AssistantCoachStaffId");
+
+                    b.HasIndex("CoachStaffId");
+
+                    b.HasIndex("GradeId");
+
+                    b.HasIndex("SportId");
+
                     b.HasIndex("TenantId", "SchoolId", "SportId", "Name")
                         .IsUnique();
 
                     b.ToTable("SportTeams");
+                });
+
+            modelBuilder.Entity("SmartSchool.Domain.Modules.Sports.SportTeamMember", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("Captain")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("JerseyNumber")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("JoinDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("PerformanceRating")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Position")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("SchoolId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SportTeamId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("StudentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("ViceCaptain")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SportTeamId");
+
+                    b.HasIndex("StudentId");
+
+                    b.HasIndex("TenantId", "SchoolId", "SportTeamId", "StudentId")
+                        .IsUnique();
+
+                    b.ToTable("SportTeamMembers");
                 });
 
             modelBuilder.Entity("SmartSchool.Domain.Modules.Students.Guardian", b =>
@@ -6124,6 +7548,265 @@ namespace SmartSchool.Persistence.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("SmartSchool.Domain.Modules.Awards.Award", b =>
+                {
+                    b.HasOne("SmartSchool.Domain.Modules.Academics.AcademicYear", "AcademicYear")
+                        .WithMany()
+                        .HasForeignKey("AcademicYearId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmartSchool.Domain.Modules.Awards.AwardCategory", "AwardCategory")
+                        .WithMany()
+                        .HasForeignKey("AwardCategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmartSchool.Domain.Modules.Academics.Term", "Term")
+                        .WithMany()
+                        .HasForeignKey("TermId");
+
+                    b.Navigation("AcademicYear");
+
+                    b.Navigation("AwardCategory");
+
+                    b.Navigation("Term");
+                });
+
+            modelBuilder.Entity("SmartSchool.Domain.Modules.Awards.PrizeGivingCeremony", b =>
+                {
+                    b.HasOne("SmartSchool.Domain.Modules.HR.StaffMember", "OrganizerStaff")
+                        .WithMany()
+                        .HasForeignKey("OrganizerStaffId");
+
+                    b.Navigation("OrganizerStaff");
+                });
+
+            modelBuilder.Entity("SmartSchool.Domain.Modules.Awards.StudentAward", b =>
+                {
+                    b.HasOne("SmartSchool.Domain.Modules.Academics.AcademicYear", "AcademicYear")
+                        .WithMany()
+                        .HasForeignKey("AcademicYearId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmartSchool.Domain.Modules.Awards.Award", "Award")
+                        .WithMany()
+                        .HasForeignKey("AwardId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmartSchool.Domain.Modules.HR.StaffMember", "IssuedByStaff")
+                        .WithMany()
+                        .HasForeignKey("IssuedByStaffId");
+
+                    b.HasOne("SmartSchool.Domain.Modules.HR.StaffMember", "PresentedByStaff")
+                        .WithMany()
+                        .HasForeignKey("PresentedByStaffId");
+
+                    b.HasOne("SmartSchool.Domain.Modules.Students.Student", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmartSchool.Domain.Modules.Academics.Term", "Term")
+                        .WithMany()
+                        .HasForeignKey("TermId");
+
+                    b.Navigation("AcademicYear");
+
+                    b.Navigation("Award");
+
+                    b.Navigation("IssuedByStaff");
+
+                    b.Navigation("PresentedByStaff");
+
+                    b.Navigation("Student");
+
+                    b.Navigation("Term");
+                });
+
+            modelBuilder.Entity("SmartSchool.Domain.Modules.Clubs.Club", b =>
+                {
+                    b.HasOne("SmartSchool.Domain.Modules.Academics.AcademicYear", "AcademicYear")
+                        .WithMany()
+                        .HasForeignKey("AcademicYearId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmartSchool.Domain.Modules.HR.StaffMember", "AdvisorStaff")
+                        .WithMany()
+                        .HasForeignKey("AdvisorStaffId");
+
+                    b.HasOne("SmartSchool.Domain.Modules.Clubs.ClubCategory", "ClubCategory")
+                        .WithMany()
+                        .HasForeignKey("ClubCategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmartSchool.Domain.Modules.HR.StaffMember", "CoAdvisorStaff")
+                        .WithMany()
+                        .HasForeignKey("CoAdvisorStaffId");
+
+                    b.Navigation("AcademicYear");
+
+                    b.Navigation("AdvisorStaff");
+
+                    b.Navigation("ClubCategory");
+
+                    b.Navigation("CoAdvisorStaff");
+                });
+
+            modelBuilder.Entity("SmartSchool.Domain.Modules.Clubs.ClubMeeting", b =>
+                {
+                    b.HasOne("SmartSchool.Domain.Modules.Clubs.Club", "Club")
+                        .WithMany()
+                        .HasForeignKey("ClubId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Club");
+                });
+
+            modelBuilder.Entity("SmartSchool.Domain.Modules.Clubs.ClubMember", b =>
+                {
+                    b.HasOne("SmartSchool.Domain.Modules.Clubs.Club", "Club")
+                        .WithMany()
+                        .HasForeignKey("ClubId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmartSchool.Domain.Modules.Students.Student", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Club");
+
+                    b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("SmartSchool.Domain.Modules.Leadership.StudentLeadershipAssignment", b =>
+                {
+                    b.HasOne("SmartSchool.Domain.Modules.Academics.AcademicYear", "AcademicYear")
+                        .WithMany()
+                        .HasForeignKey("AcademicYearId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmartSchool.Domain.Modules.HR.StaffMember", "AppointedByStaff")
+                        .WithMany()
+                        .HasForeignKey("AppointedByStaffId");
+
+                    b.HasOne("SmartSchool.Domain.Modules.Academics.Grade", "Grade")
+                        .WithMany()
+                        .HasForeignKey("GradeId");
+
+                    b.HasOne("SmartSchool.Domain.Modules.Leadership.LeadershipPosition", "LeadershipPosition")
+                        .WithMany()
+                        .HasForeignKey("LeadershipPositionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmartSchool.Domain.Modules.Students.Student", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AcademicYear");
+
+                    b.Navigation("AppointedByStaff");
+
+                    b.Navigation("Grade");
+
+                    b.Navigation("LeadershipPosition");
+
+                    b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("SmartSchool.Domain.Modules.Sports.Sport", b =>
+                {
+                    b.HasOne("SmartSchool.Domain.Modules.Sports.SportCategory", "SportCategory")
+                        .WithMany()
+                        .HasForeignKey("SportCategoryId");
+
+                    b.Navigation("SportCategory");
+                });
+
+            modelBuilder.Entity("SmartSchool.Domain.Modules.Sports.SportAchievement", b =>
+                {
+                    b.HasOne("SmartSchool.Domain.Modules.Sports.SportTeam", "SportTeam")
+                        .WithMany()
+                        .HasForeignKey("SportTeamId");
+
+                    b.HasOne("SmartSchool.Domain.Modules.Students.Student", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("SportTeam");
+
+                    b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("SmartSchool.Domain.Modules.Sports.SportTeam", b =>
+                {
+                    b.HasOne("SmartSchool.Domain.Modules.Academics.AcademicYear", "AcademicYear")
+                        .WithMany()
+                        .HasForeignKey("AcademicYearId");
+
+                    b.HasOne("SmartSchool.Domain.Modules.HR.StaffMember", "AssistantCoachStaff")
+                        .WithMany()
+                        .HasForeignKey("AssistantCoachStaffId");
+
+                    b.HasOne("SmartSchool.Domain.Modules.HR.StaffMember", "CoachStaff")
+                        .WithMany()
+                        .HasForeignKey("CoachStaffId");
+
+                    b.HasOne("SmartSchool.Domain.Modules.Academics.Grade", "Grade")
+                        .WithMany()
+                        .HasForeignKey("GradeId");
+
+                    b.HasOne("SmartSchool.Domain.Modules.Sports.Sport", "Sport")
+                        .WithMany()
+                        .HasForeignKey("SportId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AcademicYear");
+
+                    b.Navigation("AssistantCoachStaff");
+
+                    b.Navigation("CoachStaff");
+
+                    b.Navigation("Grade");
+
+                    b.Navigation("Sport");
+                });
+
+            modelBuilder.Entity("SmartSchool.Domain.Modules.Sports.SportTeamMember", b =>
+                {
+                    b.HasOne("SmartSchool.Domain.Modules.Sports.SportTeam", "SportTeam")
+                        .WithMany()
+                        .HasForeignKey("SportTeamId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SmartSchool.Domain.Modules.Students.Student", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("SportTeam");
+
+                    b.Navigation("Student");
                 });
 #pragma warning restore 612, 618
         }

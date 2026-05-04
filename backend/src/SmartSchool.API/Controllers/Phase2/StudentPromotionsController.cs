@@ -1,4 +1,14 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartSchool.API.Security;
@@ -10,6 +20,7 @@ namespace SmartSchool.API.Controllers.Phase2;
 
 [ApiController]
 [Route("api/students/promotions")]
+[Route("api/student-promotions")]
 [Authorize(Policy = PolicyNames.StudentsManage)]
 [Authorize(Policy = PolicyNames.SchoolAccess)]
 public class StudentPromotionsController(SmartSchoolDbContext dbContext) : ControllerBase
@@ -31,7 +42,7 @@ public class StudentPromotionsController(SmartSchoolDbContext dbContext) : Contr
             return BadRequest("No current enrollment found for student.");
         }
 
-        var decision = request.Decision;
+        var decision = request.ResolveDecision();
 
         var promotion = new StudentPromotion
         {
@@ -44,7 +55,7 @@ public class StudentPromotionsController(SmartSchoolDbContext dbContext) : Contr
             ToGradeId = request.ToGradeId,
             Decision = decision,
             PromotionDate = request.PromotionDate,
-            Remarks = request.Remarks?.Trim() ?? string.Empty
+            Remarks = request.Remarks?.Trim() ?? request.Reason?.Trim() ?? string.Empty
         };
 
         currentEnrollment.IsCurrent = false;
@@ -55,10 +66,8 @@ public class StudentPromotionsController(SmartSchoolDbContext dbContext) : Contr
 
         if (decision is EnrollmentDecision.Promoted or EnrollmentDecision.Repeated)
         {
-            if (request.ToTermId == Guid.Empty || request.ToStreamId == Guid.Empty)
-            {
-                return BadRequest("ToTermId and ToStreamId are required for promoted/repeated students.");
-            }
+            var toTermId = request.ToTermId == Guid.Empty ? currentEnrollment.TermId : request.ToTermId;
+            var toStreamId = request.ToStreamId == Guid.Empty ? currentEnrollment.StreamId : request.ToStreamId;
 
             var enrollment = new StudentEnrollment
             {
@@ -66,9 +75,9 @@ public class StudentPromotionsController(SmartSchoolDbContext dbContext) : Contr
                 SchoolId = request.SchoolId,
                 StudentId = request.StudentId,
                 AcademicYearId = request.ToAcademicYearId,
-                TermId = request.ToTermId,
+                TermId = toTermId,
                 GradeId = request.ToGradeId,
-                StreamId = request.ToStreamId,
+                StreamId = toStreamId,
                 Status = "Active",
                 IsCurrent = true
             };
@@ -97,11 +106,11 @@ public class StudentPromotionsController(SmartSchoolDbContext dbContext) : Contr
     }
 
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<StudentPromotion>>> GetByStudent([FromQuery] Guid tenantId, [FromQuery] Guid schoolId, [FromQuery] Guid studentId, CancellationToken cancellationToken)
+    public async Task<ActionResult<IReadOnlyList<StudentPromotion>>> GetByStudent([FromQuery] Guid tenantId, [FromQuery] Guid schoolId, [FromQuery] Guid? studentId, CancellationToken cancellationToken)
     {
-        if (tenantId == Guid.Empty || schoolId == Guid.Empty || studentId == Guid.Empty)
+        if (tenantId == Guid.Empty || schoolId == Guid.Empty)
         {
-            return BadRequest("tenantId, schoolId, and studentId are required.");
+            return BadRequest("tenantId and schoolId are required.");
         }
 
         if (!User.CanAccessTenant(tenantId))
@@ -109,12 +118,25 @@ public class StudentPromotionsController(SmartSchoolDbContext dbContext) : Contr
             return Forbid();
         }
 
-        var items = await dbContext.StudentPromotions.AsNoTracking()
-            .Where(x => x.TenantId == tenantId && x.SchoolId == schoolId && x.StudentId == studentId)
-            .OrderByDescending(x => x.PromotionDate)
-            .ToListAsync(cancellationToken);
+        var query = dbContext.StudentPromotions.AsNoTracking()
+            .Where(x => x.TenantId == tenantId && x.SchoolId == schoolId);
+        if (studentId.HasValue && studentId.Value != Guid.Empty)
+        {
+            query = query.Where(x => x.StudentId == studentId.Value);
+        }
+
+        var items = await query.OrderByDescending(x => x.PromotionDate).ToListAsync(cancellationToken);
 
         return Ok(items);
+    }
+
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<StudentPromotion>> GetById(Guid id, CancellationToken cancellationToken)
+    {
+        var promotion = await dbContext.StudentPromotions.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (promotion is null) return NotFound();
+        if (!User.CanAccessTenant(promotion.TenantId)) return Forbid();
+        return Ok(promotion);
     }
 
     [HttpDelete("{id:guid}")]
@@ -137,16 +159,21 @@ public class StudentPromotionsController(SmartSchoolDbContext dbContext) : Contr
     }
 }
 
-public sealed record CreateStudentPromotionRequest(
-    Guid TenantId,
-    Guid SchoolId,
-    Guid StudentId,
-    Guid FromAcademicYearId,
-    Guid ToAcademicYearId,
-    Guid FromGradeId,
-    Guid ToGradeId,
-    Guid ToTermId,
-    Guid ToStreamId,
-    EnrollmentDecision Decision,
-    DateTime PromotionDate,
-    string? Remarks);
+public sealed class CreateStudentPromotionRequest
+{
+    public Guid TenantId { get; set; }
+    public Guid SchoolId { get; set; }
+    public Guid StudentId { get; set; }
+    public Guid FromAcademicYearId { get; set; }
+    public Guid ToAcademicYearId { get; set; }
+    public Guid FromGradeId { get; set; }
+    public Guid ToGradeId { get; set; }
+    public Guid ToTermId { get; set; }
+    public Guid ToStreamId { get; set; }
+    public EnrollmentDecision? Decision { get; set; }
+    public string? Reason { get; set; }
+    public DateTime PromotionDate { get; set; }
+    public string? Remarks { get; set; }
+
+    public EnrollmentDecision ResolveDecision() => Decision ?? EnrollmentDecision.Promoted;
+}

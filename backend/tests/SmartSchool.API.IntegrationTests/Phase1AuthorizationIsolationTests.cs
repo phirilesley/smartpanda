@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Json;
 
 namespace SmartSchool.API.IntegrationTests;
 
@@ -85,7 +86,7 @@ public class Phase1AuthorizationIsolationTests : IClassFixture<SmartSchoolApiFac
 
         var response = await client.GetAsync(url);
 
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.NotEqual(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]

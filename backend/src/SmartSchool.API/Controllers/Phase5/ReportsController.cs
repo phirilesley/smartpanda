@@ -1,4 +1,15 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartSchool.API.Security;
@@ -133,11 +144,10 @@ public class ReportsController(SmartSchoolDbContext dbContext) : ControllerBase
 
         if (!User.CanAccessTenant(definition.TenantId)) return Forbid();
 
-        // Check if definition is used in any report runs
-        var hasRuns = await dbContext.ReportRuns.AnyAsync(x => x.ReportDefinitionId == id, cancellationToken);
-        if (hasRuns)
+        var runs = await dbContext.ReportRuns.Where(x => x.ReportDefinitionId == id).ToListAsync(cancellationToken);
+        if (runs.Count > 0)
         {
-            return BadRequest("Cannot delete report definition with existing runs.");
+            dbContext.ReportRuns.RemoveRange(runs);
         }
 
         dbContext.ReportDefinitions.Remove(definition);

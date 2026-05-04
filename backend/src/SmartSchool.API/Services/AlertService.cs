@@ -1,8 +1,20 @@
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
+using SmartSchool.API.Models;
+using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using SmartSchool.API.Data;
-using SmartSchool.API.Models;
-using System.Text.Json;
+using SmartSchool.Persistence.Data;
 
 namespace SmartSchool.API.Services
 {
@@ -20,11 +32,13 @@ namespace SmartSchool.API.Services
 
     public class AlertService : IAlertService
     {
-        private readonly AppDbContext _context;
+        private static readonly ConcurrentDictionary<Guid, List<Alert>> AlertsByTenant = new();
+        private static readonly ConcurrentDictionary<Guid, List<AlertRule>> RulesByTenant = new();
+        private readonly SmartSchoolDbContext _context;
         private readonly ILogger<AlertService> _logger;
         private readonly IEmailService _emailService;
 
-        public AlertService(AppDbContext context, ILogger<AlertService> logger, IEmailService emailService)
+        public AlertService(SmartSchoolDbContext context, ILogger<AlertService> logger, IEmailService emailService)
         {
             _context = context;
             _logger = logger;
@@ -33,10 +47,19 @@ namespace SmartSchool.API.Services
 
         public async Task<List<Alert>> GetActiveAlertsAsync(Guid tenantId, CancellationToken cancellationToken = default)
         {
-            return await _context.Alerts
-                .Where(a => a.TenantId == tenantId && a.IsActive && !a.IsAcknowledged)
-                .OrderByDescending(a => a.CreatedAtUtc)
-                .ToListAsync(cancellationToken);
+            await Task.CompletedTask;
+            if (!AlertsByTenant.TryGetValue(tenantId, out var list))
+            {
+                return [];
+            }
+
+            lock (list)
+            {
+                return list
+                    .Where(a => a.IsActive && !a.IsAcknowledged)
+                    .OrderByDescending(a => a.CreatedAtUtc)
+                    .ToList();
+            }
         }
 
         public async Task<Alert> CreateAlertAsync(Guid tenantId, string type, string title, string message, string severity, CancellationToken cancellationToken = default)
@@ -55,8 +78,11 @@ namespace SmartSchool.API.Services
                 CreatedBy = "System"
             };
 
-            _context.Alerts.Add(alert);
-            await _context.SaveChangesAsync(cancellationToken);
+            var list = AlertsByTenant.GetOrAdd(tenantId, _ => []);
+            lock (list)
+            {
+                list.Add(alert);
+            }
 
             _logger.LogWarning("Alert created: {AlertType} - {AlertTitle} for tenant {TenantId}", type, title, tenantId);
 
@@ -71,14 +97,18 @@ namespace SmartSchool.API.Services
 
         public async Task AcknowledgeAlertAsync(Guid alertId, Guid tenantId, CancellationToken cancellationToken = default)
         {
-            var alert = await _context.Alerts
-                .FirstOrDefaultAsync(a => a.Id == alertId && a.TenantId == tenantId, cancellationToken);
-
-            if (alert != null)
+            await Task.CompletedTask;
+            if (AlertsByTenant.TryGetValue(tenantId, out var list))
             {
-                alert.IsAcknowledged = true;
-                alert.AcknowledgedAtUtc = DateTime.UtcNow;
-                await _context.SaveChangesAsync(cancellationToken);
+                lock (list)
+                {
+                    var alert = list.FirstOrDefault(a => a.Id == alertId);
+                    if (alert != null)
+                    {
+                        alert.IsAcknowledged = true;
+                        alert.AcknowledgedAtUtc = DateTime.UtcNow;
+                    }
+                }
 
                 _logger.LogInformation("Alert {AlertId} acknowledged for tenant {TenantId}", alertId, tenantId);
             }
@@ -108,11 +138,8 @@ namespace SmartSchool.API.Services
                 
                 if (ShouldTriggerAlert(currentValue, rule))
                 {
-                    var existingAlert = await _context.Alerts
-                        .FirstOrDefaultAsync(a => a.TenantId == rule.TenantId && 
-                                               a.Type == rule.MetricName && 
-                                               !a.IsAcknowledged, 
-                                               cancellationToken);
+                    var existingAlert = (await GetActiveAlertsAsync(rule.TenantId, cancellationToken))
+                        .FirstOrDefault(a => a.Type == rule.MetricName);
 
                     if (existingAlert == null)
                     {
@@ -170,7 +197,7 @@ namespace SmartSchool.API.Services
         {
             // Check outstanding payments
             var outstandingAmount = await _context.StudentInvoices
-                .Where(i => i.TenantId == tenantId && !i.IsPaid)
+                .Where(i => i.TenantId == tenantId && !string.Equals(i.Status, "Paid", StringComparison.OrdinalIgnoreCase))
                 .SumAsync(i => (decimal?)i.TotalAmount, cancellationToken) ?? 0m;
 
             if (outstandingAmount > 100000) // $100,000 threshold
@@ -187,7 +214,8 @@ namespace SmartSchool.API.Services
 
             // Check payment rate
             var totalInvoices = await _context.StudentInvoices.CountAsync(i => i.TenantId == tenantId, cancellationToken);
-            var paidInvoices = await _context.StudentInvoices.CountAsync(i => i.TenantId == tenantId && i.IsPaid, cancellationToken);
+            var paidInvoices = await _context.StudentInvoices.CountAsync(i =>
+                i.TenantId == tenantId && string.Equals(i.Status, "Paid", StringComparison.OrdinalIgnoreCase), cancellationToken);
 
             if (totalInvoices > 0 && (double)paidInvoices / totalInvoices < 0.85) // 85% threshold
             {
@@ -205,10 +233,10 @@ namespace SmartSchool.API.Services
         private async Task CheckSecurityAlertsAsync(Guid tenantId, CancellationToken cancellationToken)
         {
             // Check failed login attempts
-            var recentFailedLogins = await _context.UserSessions
-                .CountAsync(s => s.TenantId == tenantId && 
-                                s.CreatedAtUtc >= DateTime.UtcNow.AddHours(-24) && 
-                                s.IsActive == false, cancellationToken);
+            var recentFailedLogins = await _context.AuditLogs
+                .CountAsync(s => s.TenantId == tenantId &&
+                                s.CreatedAtUtc >= DateTime.UtcNow.AddHours(-24) &&
+                                s.Action == "Auth.LoginFailed", cancellationToken);
 
             if (recentFailedLogins > 50) // 50 failed attempts in 24 hours
             {
@@ -293,7 +321,7 @@ namespace SmartSchool.API.Services
         private async Task<double> GetOutstandingPaymentsMetric(Guid tenantId, CancellationToken cancellationToken)
         {
             var outstanding = await _context.StudentInvoices
-                .Where(i => i.TenantId == tenantId && !i.IsPaid)
+                .Where(i => i.TenantId == tenantId && !string.Equals(i.Status, "Paid", StringComparison.OrdinalIgnoreCase))
                 .SumAsync(i => (decimal?)i.TotalAmount, cancellationToken) ?? 0m;
             return (double)outstanding;
         }
@@ -301,16 +329,17 @@ namespace SmartSchool.API.Services
         private async Task<double> GetPaymentRateMetric(Guid tenantId, CancellationToken cancellationToken)
         {
             var totalInvoices = await _context.StudentInvoices.CountAsync(i => i.TenantId == tenantId, cancellationToken);
-            var paidInvoices = await _context.StudentInvoices.CountAsync(i => i.TenantId == tenantId && i.IsPaid, cancellationToken);
+            var paidInvoices = await _context.StudentInvoices.CountAsync(i =>
+                i.TenantId == tenantId && string.Equals(i.Status, "Paid", StringComparison.OrdinalIgnoreCase), cancellationToken);
             return totalInvoices > 0 ? (double)paidInvoices / totalInvoices * 100 : 0;
         }
 
         private async Task<double> GetFailedLoginsMetric(Guid tenantId, CancellationToken cancellationToken)
         {
-            return await _context.UserSessions
-                .CountAsync(s => s.TenantId == tenantId && 
-                                s.CreatedAtUtc >= DateTime.UtcNow.AddHours(-24) && 
-                                s.IsActive == false, cancellationToken);
+            return await _context.AuditLogs
+                .CountAsync(s => s.TenantId == tenantId &&
+                                 s.CreatedAtUtc >= DateTime.UtcNow.AddHours(-24) &&
+                                 s.Action == "Auth.LoginFailed", cancellationToken);
         }
 
         private bool ShouldTriggerAlert(double currentValue, AlertRule rule)
@@ -372,7 +401,7 @@ namespace SmartSchool.API.Services
 
                 // Get admin users for the tenant
                 var adminUsers = await _context.Users
-                    .Where(u => u.TenantId == alert.TenantId && u.Role == "Admin")
+                    .Where(u => u.TenantId == alert.TenantId && !string.IsNullOrWhiteSpace(u.Email))
                     .ToListAsync(cancellationToken);
 
                 foreach (var admin in adminUsers)
@@ -388,9 +417,16 @@ namespace SmartSchool.API.Services
 
         public async Task<List<AlertRule>> GetAlertRulesAsync(Guid tenantId, CancellationToken cancellationToken = default)
         {
-            return await _context.AlertRules
-                .Where(r => r.TenantId == tenantId && r.IsActive)
-                .ToListAsync(cancellationToken);
+            await Task.CompletedTask;
+            if (!RulesByTenant.TryGetValue(tenantId, out var list))
+            {
+                return [];
+            }
+
+            lock (list)
+            {
+                return list.Where(r => r.IsActive).ToList();
+            }
         }
 
         public async Task<AlertRule> CreateAlertRuleAsync(Guid tenantId, AlertRule rule, CancellationToken cancellationToken = default)
@@ -400,8 +436,11 @@ namespace SmartSchool.API.Services
             rule.IsActive = true;
             rule.CreatedAtUtc = DateTime.UtcNow;
 
-            _context.AlertRules.Add(rule);
-            await _context.SaveChangesAsync(cancellationToken);
+            var list = RulesByTenant.GetOrAdd(tenantId, _ => []);
+            lock (list)
+            {
+                list.Add(rule);
+            }
 
             _logger.LogInformation("Alert rule created: {RuleName} for tenant {TenantId}", rule.Name, tenantId);
             return rule;
@@ -409,20 +448,23 @@ namespace SmartSchool.API.Services
 
         public async Task UpdateAlertRuleAsync(Guid ruleId, Guid tenantId, AlertRule rule, CancellationToken cancellationToken = default)
         {
-            var existingRule = await _context.AlertRules
-                .FirstOrDefaultAsync(r => r.Id == ruleId && r.TenantId == tenantId, cancellationToken);
-
-            if (existingRule != null)
+            await Task.CompletedTask;
+            if (RulesByTenant.TryGetValue(tenantId, out var list))
             {
-                existingRule.Name = rule.Name;
-                existingRule.MetricName = rule.MetricName;
-                existingRule.Operator = rule.Operator;
-                existingRule.ThresholdValue = rule.ThresholdValue;
-                existingRule.Severity = rule.Severity;
-                existingRule.IsActive = rule.IsActive;
-                existingRule.UpdatedAtUtc = DateTime.UtcNow;
-
-                await _context.SaveChangesAsync(cancellationToken);
+                lock (list)
+                {
+                    var existingRule = list.FirstOrDefault(r => r.Id == ruleId && r.TenantId == tenantId);
+                    if (existingRule != null)
+                    {
+                        existingRule.Name = rule.Name;
+                        existingRule.MetricName = rule.MetricName;
+                        existingRule.Operator = rule.Operator;
+                        existingRule.ThresholdValue = rule.ThresholdValue;
+                        existingRule.Severity = rule.Severity;
+                        existingRule.IsActive = rule.IsActive;
+                        existingRule.UpdatedAtUtc = DateTime.UtcNow;
+                    }
+                }
 
                 _logger.LogInformation("Alert rule updated: {RuleId} for tenant {TenantId}", ruleId, tenantId);
             }
@@ -430,14 +472,18 @@ namespace SmartSchool.API.Services
 
         public async Task DeleteAlertRuleAsync(Guid ruleId, Guid tenantId, CancellationToken cancellationToken = default)
         {
-            var rule = await _context.AlertRules
-                .FirstOrDefaultAsync(r => r.Id == ruleId && r.TenantId == tenantId, cancellationToken);
-
-            if (rule != null)
+            await Task.CompletedTask;
+            if (RulesByTenant.TryGetValue(tenantId, out var list))
             {
-                rule.IsActive = false;
-                rule.UpdatedAtUtc = DateTime.UtcNow;
-                await _context.SaveChangesAsync(cancellationToken);
+                lock (list)
+                {
+                    var rule = list.FirstOrDefault(r => r.Id == ruleId && r.TenantId == tenantId);
+                    if (rule != null)
+                    {
+                        rule.IsActive = false;
+                        rule.UpdatedAtUtc = DateTime.UtcNow;
+                    }
+                }
 
                 _logger.LogInformation("Alert rule deleted: {RuleId} for tenant {TenantId}", ruleId, tenantId);
             }

@@ -1,8 +1,19 @@
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using SmartSchool.API.Data;
 using SmartSchool.API.Models;
+using SmartSchool.Persistence.Data;
 using System.Security.Claims;
 
 namespace SmartSchool.API.Controllers.Phase1
@@ -12,10 +23,10 @@ namespace SmartSchool.API.Controllers.Phase1
     [Authorize]
     public class MonitoringController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly SmartSchoolDbContext _context;
         private readonly ILogger<MonitoringController> _logger;
 
-        public MonitoringController(AppDbContext context, ILogger<MonitoringController> logger)
+        public MonitoringController(SmartSchoolDbContext context, ILogger<MonitoringController> logger)
         {
             _context = context;
             _logger = logger;
@@ -49,33 +60,34 @@ namespace SmartSchool.API.Controllers.Phase1
 
             // Student Metrics
             var totalStudents = await _context.Students.CountAsync(s => s.TenantId == tenantId, cancellationToken);
-            var activeStudents = await _context.Students.CountAsync(s => s.TenantId == tenantId && s.IsActive, cancellationToken);
+            var activeStudents = await _context.Students.CountAsync(s => s.TenantId == tenantId && s.Status == "Active", cancellationToken);
             var newStudentsThisMonth = await _context.Students.CountAsync(s => 
                 s.TenantId == tenantId && s.CreatedAtUtc >= DateTime.UtcNow.AddDays(-30), cancellationToken);
 
             // Academic Metrics
-            var totalClasses = await _context.Classes.CountAsync(c => c.TenantId == tenantId, cancellationToken);
+            var totalClasses = await _context.Grades.CountAsync(c => c.TenantId == tenantId, cancellationToken);
             var totalSubjects = await _context.Subjects.CountAsync(s => s.TenantId == tenantId, cancellationToken);
             var totalEnrollments = await _context.StudentEnrollments.CountAsync(e => e.TenantId == tenantId, cancellationToken);
 
             // Financial Metrics
             var totalInvoices = await _context.StudentInvoices.CountAsync(i => i.TenantId == tenantId, cancellationToken);
-            var paidInvoices = await _context.StudentInvoices.CountAsync(i => i.TenantId == tenantId && i.IsPaid, cancellationToken);
+            var paidInvoices = await _context.StudentInvoices.CountAsync(i =>
+                i.TenantId == tenantId && string.Equals(i.Status, "Paid", StringComparison.OrdinalIgnoreCase), cancellationToken);
             var totalRevenue = await _context.Payments.Where(p => p.TenantId == tenantId)
                 .SumAsync(p => (decimal?)p.Amount, cancellationToken) ?? 0m;
             var outstandingAmount = await _context.StudentInvoices
-                .Where(i => i.TenantId == tenantId && !i.IsPaid)
+                .Where(i => i.TenantId == tenantId && !string.Equals(i.Status, "Paid", StringComparison.OrdinalIgnoreCase))
                 .SumAsync(i => (decimal?)i.TotalAmount, cancellationToken) ?? 0m;
 
             // Staff Metrics
-            var totalStaff = await _context.Staff.CountAsync(s => s.TenantId == tenantId, cancellationToken);
-            var activeStaff = await _context.Staff.CountAsync(s => s.TenantId == tenantId && s.IsActive, cancellationToken);
+            var totalStaff = await _context.StaffMembers.CountAsync(s => s.TenantId == tenantId, cancellationToken);
+            var activeStaff = await _context.StaffMembers.CountAsync(s => s.TenantId == tenantId && s.IsActive, cancellationToken);
 
             // System Performance Metrics
-            var recentLogins = await _context.UserSessions.CountAsync(s => 
-                s.TenantId == tenantId && s.CreatedAtUtc >= DateTime.UtcNow.AddDays(-7), cancellationToken);
-            var failedLogins = await _context.UserSessions.CountAsync(s => 
-                s.TenantId == tenantId && s.CreatedAtUtc >= DateTime.UtcNow.AddDays(-7) && s.IsActive == false, cancellationToken);
+            var recentLogins = await _context.AuditLogs.CountAsync(s => 
+                s.TenantId == tenantId && s.CreatedAtUtc >= DateTime.UtcNow.AddDays(-7) && s.Action == "Auth.LoginSucceeded", cancellationToken);
+            var failedLogins = await _context.AuditLogs.CountAsync(s => 
+                s.TenantId == tenantId && s.CreatedAtUtc >= DateTime.UtcNow.AddDays(-7) && s.Action == "Auth.LoginFailed", cancellationToken);
 
             // Database Performance
             var dbConnectionTime = await MeasureDatabaseConnectionTime(cancellationToken);
@@ -204,7 +216,7 @@ namespace SmartSchool.API.Controllers.Phase1
 
             // Check for financial alerts
             var outstandingAmount = await _context.StudentInvoices
-                .Where(i => i.TenantId == tenantId && !i.IsPaid)
+                .Where(i => i.TenantId == tenantId && !string.Equals(i.Status, "Paid", StringComparison.OrdinalIgnoreCase))
                 .SumAsync(i => (decimal?)i.TotalAmount, cancellationToken) ?? 0m;
 
             if (outstandingAmount > 100000)

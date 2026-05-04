@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Awards;
 using SmartSchool.Domain.Modules.Assets;
 using SmartSchool.Domain.Modules.Attendance;
+using SmartSchool.Domain.Modules.Clubs;
 using SmartSchool.Domain.Modules.Communication;
 using SmartSchool.Domain.Modules.Exams;
 using SmartSchool.Domain.Modules.Files;
@@ -14,6 +16,7 @@ using SmartSchool.Domain.Modules.HR;
 using SmartSchool.Domain.Modules.Integrations;
 using SmartSchool.Domain.Modules.Labs;
 using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Leadership;
 using SmartSchool.Domain.Modules.Memos;
 using SmartSchool.Domain.Modules.Notifications;
 using SmartSchool.Domain.Modules.Platform;
@@ -133,11 +136,32 @@ public class SmartSchoolDbContext(DbContextOptions<SmartSchoolDbContext> options
     public DbSet<PosPayment> PosPayments => Set<PosPayment>();
 
     public DbSet<Sport> Sports => Set<Sport>();
+    public DbSet<SportCategory> SportCategories => Set<SportCategory>();
     public DbSet<House> Houses => Set<House>();
     public DbSet<SportTeam> SportTeams => Set<SportTeam>();
     public DbSet<SportPlayer> SportPlayers => Set<SportPlayer>();
+    public DbSet<SportTeamMember> SportTeamMembers => Set<SportTeamMember>();
+    public DbSet<SportEvent> SportEvents => Set<SportEvent>();
+    public DbSet<SportAchievement> SportAchievements => Set<SportAchievement>();
     public DbSet<Fixture> Fixtures => Set<Fixture>();
     public DbSet<SportResult> SportResults => Set<SportResult>();
+
+    public DbSet<AwardCategory> AwardCategories => Set<AwardCategory>();
+    public DbSet<Award> Awards => Set<Award>();
+    public DbSet<StudentAward> StudentAwards => Set<StudentAward>();
+    public DbSet<PrizeGivingCeremony> PrizeGivingCeremonies => Set<PrizeGivingCeremony>();
+    public DbSet<CeremonyAward> CeremonyAwards => Set<CeremonyAward>();
+
+    public DbSet<ClubCategory> ClubCategories => Set<ClubCategory>();
+    public DbSet<Club> Clubs => Set<Club>();
+    public DbSet<ClubMember> ClubMembers => Set<ClubMember>();
+    public DbSet<ClubMeeting> ClubMeetings => Set<ClubMeeting>();
+    public DbSet<ClubActivity> ClubActivities => Set<ClubActivity>();
+
+    public DbSet<LeadershipPosition> LeadershipPositions => Set<LeadershipPosition>();
+    public DbSet<StudentLeadershipAssignment> StudentLeadershipAssignments => Set<StudentLeadershipAssignment>();
+    public DbSet<LeadershipDuty> LeadershipDuties => Set<LeadershipDuty>();
+    public DbSet<LeadershipDutyLog> LeadershipDutyLogs => Set<LeadershipDutyLog>();
 
     public DbSet<Room> Rooms => Set<Room>();
     public DbSet<TimetablePeriod> TimetablePeriods => Set<TimetablePeriod>();
@@ -186,12 +210,60 @@ public class SmartSchoolDbContext(DbContextOptions<SmartSchoolDbContext> options
     public DbSet<UploadedFile> UploadedFiles => Set<UploadedFile>();
     public DbSet<IntegrationSetting> IntegrationSettings => Set<IntegrationSetting>();
     public DbSet<PaymentGatewayWebhook> PaymentGatewayWebhooks => Set<PaymentGatewayWebhook>();
+    public DbSet<GovernmentExportLog> GovernmentExportLogs => Set<GovernmentExportLog>();
+    public DbSet<GovernmentBulkSubmission> GovernmentBulkSubmissions => Set<GovernmentBulkSubmission>();
 
     public DbSet<PortalWidgetPreference> PortalWidgetPreferences => Set<PortalWidgetPreference>();
     public DbSet<PortalQuickLink> PortalQuickLinks => Set<PortalQuickLink>();
     public DbSet<SchoolSetting> SchoolSettings => Set<SchoolSetting>();
     public DbSet<MasterDataItem> MasterDataItems => Set<MasterDataItem>();
     public DbSet<TenantFeatureFlag> TenantFeatureFlags => Set<TenantFeatureFlag>();
+
+    // Phase 6 and Integration DbSets
+    public DbSet<Parent> Parents => Set<Parent>();
+    public DbSet<Notice> Notices => Set<Notice>();
+    public DbSet<StudentExamResult> StudentExamResults => Set<StudentExamResult>();
+    public DbSet<ClassTeacherAssignment> ClassTeacherAssignments => Set<ClassTeacherAssignment>();
+    public DbSet<ClassSubjectAssignment> ClassSubjectAssignments => Set<ClassSubjectAssignment>();
+    public DbSet<Class> Classes => Set<Class>();
+    public DbSet<Invoice> Invoices => Set<Invoice>();
+    public DbSet<MobileMoneyTransaction> MobileMoneyTransactions => Set<MobileMoneyTransaction>();
+    public DbSet<ZIPITTransaction> ZIPITTransactions => Set<ZIPITTransaction>();
+    public DbSet<BankTransaction> BankTransactions => Set<BankTransaction>();
+    public DbSet<MarketplaceApp> MarketplaceApps => Set<MarketplaceApp>();
+    public DbSet<AppVersion> AppVersions => Set<AppVersion>();
+    public DbSet<AppInstallation> AppInstallations => Set<AppInstallation>();
+    public DbSet<AppApiKey> AppApiKeys => Set<AppApiKey>();
+    public DbSet<AppReview> AppReviews => Set<AppReview>();
+    public DbSet<MarketplaceDeveloper> MarketplaceDevelopers => Set<MarketplaceDeveloper>();
+    public DbSet<MarketplaceCategory> MarketplaceCategories => Set<MarketplaceCategory>();
+    public DbSet<AppWebhookLog> AppWebhookLogs => Set<AppWebhookLog>();
+    public DbSet<ZimbabwePayment> ZimbabwePayments => Set<ZimbabwePayment>();
+    public DbSet<SecurityEvent> SecurityEvents => Set<SecurityEvent>();
+    public DbSet<DataEncryptionLog> DataEncryptionLogs => Set<DataEncryptionLog>();
+    public DbSet<DataDecryptionLog> DataDecryptionLogs => Set<DataDecryptionLog>();
+    public DbSet<RbacAssignment> RbacAssignments => Set<RbacAssignment>();
+    public DbSet<VulnerabilityScanResult> VulnerabilityScanResults => Set<VulnerabilityScanResult>();
+    public DbSet<SecurityAlert> SecurityAlerts => Set<SecurityAlert>();
+    public DbSet<AccessLog> AccessLogs => Set<AccessLog>();
+    public DbSet<SecurityAuditTrail> SecurityAuditTrails => Set<SecurityAuditTrail>();
+    public DbSet<OfflineSyncSession> OfflineSyncSessions => Set<OfflineSyncSession>();
+    public DbSet<SyncSession> SyncSessions => Set<SyncSession>();
+    public DbSet<DocumentRecord> DocumentRecords => Set<DocumentRecord>();
+    public DbSet<GeneratedDocument> GeneratedDocuments => Set<GeneratedDocument>();
+    public DbSet<DocumentTemplate> DocumentTemplates => Set<DocumentTemplate>();
+    public DbSet<DocumentGenerationSchedule> DocumentGenerationSchedules => Set<DocumentGenerationSchedule>();
+    public DbSet<ScheduledDocumentGeneration> ScheduledDocumentGenerations => Set<ScheduledDocumentGeneration>();
+    public DbSet<BulkDocumentGeneration> BulkDocumentGenerations => Set<BulkDocumentGeneration>();
+    public DbSet<WebhookLog> WebhookLogs => Set<WebhookLog>();
+    public DbSet<SuspiciousAccessBlock> SuspiciousAccessBlocks => Set<SuspiciousAccessBlock>();
+    public DbSet<Resource> Resources => Set<Resource>();
+    public DbSet<ZIMSECResult> ZIMSECResults => Set<ZIMSECResult>();
+    public DbSet<OfflinePendingUpload> OfflinePendingUploads => Set<OfflinePendingUpload>();
+    public DbSet<OfflinePendingDownload> OfflinePendingDownloads => Set<OfflinePendingDownload>();
+    public DbSet<OfflineSyncLog> OfflineSyncLogs => Set<OfflineSyncLog>();
+    public DbSet<Exam> Exams => Set<Exam>();
+    public DbSet<Developer> Developers => Set<Developer>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -256,9 +328,26 @@ public class SmartSchoolDbContext(DbContextOptions<SmartSchoolDbContext> options
         modelBuilder.Entity<PosCashierSession>().HasIndex(x => new { x.TenantId, x.SchoolId, x.CashierUserId, x.ClosedAtUtc });
         modelBuilder.Entity<PosSale>().HasIndex(x => new { x.TenantId, x.SchoolId, x.ReceiptNumber }).IsUnique();
         modelBuilder.Entity<Sport>().HasIndex(x => new { x.TenantId, x.SchoolId, x.Name }).IsUnique();
+        modelBuilder.Entity<SportCategory>().HasIndex(x => new { x.TenantId, x.SchoolId, x.Code }).IsUnique();
         modelBuilder.Entity<House>().HasIndex(x => new { x.TenantId, x.SchoolId, x.Name }).IsUnique();
         modelBuilder.Entity<SportTeam>().HasIndex(x => new { x.TenantId, x.SchoolId, x.SportId, x.Name }).IsUnique();
         modelBuilder.Entity<SportPlayer>().HasIndex(x => new { x.TenantId, x.SchoolId, x.SportTeamId, x.StudentId }).IsUnique();
+        modelBuilder.Entity<SportTeamMember>().HasIndex(x => new { x.TenantId, x.SchoolId, x.SportTeamId, x.StudentId }).IsUnique();
+        modelBuilder.Entity<SportEvent>().HasIndex(x => new { x.TenantId, x.SchoolId, x.EventDate, x.Venue });
+        modelBuilder.Entity<SportAchievement>().HasIndex(x => new { x.TenantId, x.SchoolId, x.StudentId, x.AchievementDate });
+        modelBuilder.Entity<AwardCategory>().HasIndex(x => new { x.TenantId, x.SchoolId, x.Name }).IsUnique();
+        modelBuilder.Entity<Award>().HasIndex(x => new { x.TenantId, x.SchoolId, x.AwardCategoryId, x.Name }).IsUnique();
+        modelBuilder.Entity<StudentAward>().HasIndex(x => new { x.TenantId, x.SchoolId, x.AwardId, x.StudentId, x.AcademicYearId });
+        modelBuilder.Entity<PrizeGivingCeremony>().HasIndex(x => new { x.TenantId, x.SchoolId, x.CeremonyDate, x.Name }).IsUnique();
+        modelBuilder.Entity<CeremonyAward>().HasIndex(x => new { x.TenantId, x.SchoolId, x.PrizeGivingCeremonyId, x.StudentAwardId }).IsUnique();
+        modelBuilder.Entity<ClubCategory>().HasIndex(x => new { x.TenantId, x.SchoolId, x.Code }).IsUnique();
+        modelBuilder.Entity<Club>().HasIndex(x => new { x.TenantId, x.SchoolId, x.Code }).IsUnique();
+        modelBuilder.Entity<ClubMember>().HasIndex(x => new { x.TenantId, x.SchoolId, x.ClubId, x.StudentId }).IsUnique();
+        modelBuilder.Entity<ClubMeeting>().HasIndex(x => new { x.TenantId, x.SchoolId, x.ClubId, x.MeetingDate });
+        modelBuilder.Entity<LeadershipPosition>().HasIndex(x => new { x.TenantId, x.SchoolId, x.Title }).IsUnique();
+        modelBuilder.Entity<StudentLeadershipAssignment>().HasIndex(x => new { x.TenantId, x.SchoolId, x.StudentId, x.LeadershipPositionId, x.AcademicYearId }).IsUnique();
+        modelBuilder.Entity<LeadershipDuty>().HasIndex(x => new { x.TenantId, x.SchoolId, x.LeadershipPositionId, x.DutyTitle }).IsUnique();
+        modelBuilder.Entity<LeadershipDutyLog>().HasIndex(x => new { x.TenantId, x.SchoolId, x.StudentLeadershipAssignmentId, x.LeadershipDutyId, x.DutyDate });
         modelBuilder.Entity<Room>().HasIndex(x => new { x.TenantId, x.SchoolId, x.Name }).IsUnique();
         modelBuilder.Entity<TimetablePeriod>().HasIndex(x => new { x.TenantId, x.SchoolId, x.DayOfWeek, x.StartTime, x.EndTime }).IsUnique();
         modelBuilder.Entity<TimetableEntry>().HasIndex(x => new { x.TenantId, x.SchoolId, x.AcademicYearId, x.TermId, x.GradeId, x.StreamId, x.TimetablePeriodId }).IsUnique();
@@ -288,10 +377,98 @@ public class SmartSchoolDbContext(DbContextOptions<SmartSchoolDbContext> options
             .HasFilter("[IsCurrent] = 1")
             .IsUnique();
 
+        // 🚀 CRITICAL PERFORMANCE INDEXES FOR LARGE-SCALE OPERATIONS
+
+        // Student Lookups (most frequent queries)
+        modelBuilder.Entity<Student>()
+            .HasIndex(x => new { x.TenantId, x.SchoolId, x.AdmissionNumber })
+            .IsUnique();
+        modelBuilder.Entity<Student>()
+            .HasIndex(x => new { x.TenantId, x.SchoolId, x.FirstName, x.LastName });
+        modelBuilder.Entity<Student>()
+            .HasIndex(x => new { x.TenantId, x.SchoolId, x.GradeId, x.StreamId });
+
+        // Attendance Queries (high-volume daily operations)
+        modelBuilder.Entity<StudentAttendance>()
+            .HasIndex(x => new { x.TenantId, x.SchoolId, x.AttendanceSessionId, x.StudentId });
+        modelBuilder.Entity<StudentAttendance>()
+            .HasIndex(x => new { x.TenantId, x.SchoolId, x.AttendanceDate, x.IsPresent });
+        modelBuilder.Entity<AttendanceSession>()
+            .HasIndex(x => new { x.TenantId, x.SchoolId, x.AcademicYearId, x.TermId, x.AttendanceDate });
+
+        // Financial Queries (critical for fee management)
+        modelBuilder.Entity<Payment>()
+            .HasIndex(x => new { x.TenantId, x.SchoolId, x.StudentId, x.PaymentDate });
+        modelBuilder.Entity<Payment>()
+            .HasIndex(x => new { x.TenantId, x.SchoolId, x.PaymentDate, x.Status });
+        modelBuilder.Entity<StudentInvoice>()
+            .HasIndex(x => new { x.TenantId, x.SchoolId, x.StudentId, x.DueDate, x.Status });
+
+        // Academic Records (report generation)
+        modelBuilder.Entity<StudentMark>()
+            .HasIndex(x => new { x.TenantId, x.SchoolId, x.StudentId, x.SubjectId, x.ExamSessionId });
+        modelBuilder.Entity<StudentMark>()
+            .HasIndex(x => new { x.TenantId, x.SchoolId, x.ExamSessionId, x.SubjectId });
+        modelBuilder.Entity<ExamSession>()
+            .HasIndex(x => new { x.TenantId, x.SchoolId, x.AcademicYearId, x.TermId, x.ExamTypeId });
+
+        // Staff Management
+        modelBuilder.Entity<StaffMember>()
+            .HasIndex(x => new { x.TenantId, x.SchoolId, x.EmployeeNumber })
+            .IsUnique();
+        modelBuilder.Entity<StaffAttendance>()
+            .HasIndex(x => new { x.TenantId, x.SchoolId, x.StaffId, x.AttendanceDate });
+
+        // Library Operations
+        modelBuilder.Entity<BookIssue>()
+            .HasIndex(x => new { x.TenantId, x.SchoolId, x.StudentId, x.IssueDate, x.ReturnDate });
+        modelBuilder.Entity<BookIssue>()
+            .HasIndex(x => new { x.TenantId, x.SchoolId, x.BookCopyId, x.Status });
+
+        // Asset Management
+        modelBuilder.Entity<AssetItem>()
+            .HasIndex(x => new { x.TenantId, x.SchoolId, x.AssetTag })
+            .IsUnique();
+        modelBuilder.Entity<AssetAssignment>()
+            .HasIndex(x => new { x.TenantId, x.SchoolId, x.AssetId, x.AssignedToId, x.AssignmentDate });
+
+        // Transport Management
+        modelBuilder.Entity<TransportStudentAssignment>()
+            .HasIndex(x => new { x.TenantId, x.SchoolId, x.StudentId, x.Status });
+        modelBuilder.Entity<TransportTrip>()
+            .HasIndex(x => new { x.TenantId, x.SchoolId, x.TransportVehicleId, x.TripDate });
+
+        // Health Records
+        modelBuilder.Entity<ClinicVisit>()
+            .HasIndex(x => new { x.TenantId, x.SchoolId, x.PatientId, x.PatientType, x.VisitDateUtc });
+
+        // Document Management
+        modelBuilder.Entity<DocumentRecord>()
+            .HasIndex(x => new { x.TenantId, x.SchoolId, x.EntityType, x.EntityId, x.DocumentType });
+        modelBuilder.Entity<DocumentRecord>()
+            .HasIndex(x => new { x.TenantId, x.SchoolId, x.CreatedAtUtc });
+
+        // Communication
+        modelBuilder.Entity<NoticeRecord>()
+            .HasIndex(x => new { x.TenantId, x.SchoolId, x.NoticeType, x.CreatedAtUtc });
+        modelBuilder.Entity<NoticeRecord>()
+            .HasIndex(x => new { x.TenantId, x.SchoolId, x.TargetAudience, x.Priority });
+
+        // Mobile Sync Operations
+        modelBuilder.Entity<SyncSession>()
+            .HasIndex(x => new { x.TenantId, x.SchoolId, x.UserId, x.DeviceId, x.StartedAtUtc });
+        modelBuilder.Entity<SyncSession>()
+            .HasIndex(x => new { x.TenantId, x.SchoolId, x.Status, x.StartedAtUtc });
+
+        // Security & Audit
+        modelBuilder.Entity<AuditLog>()
+            .HasIndex(x => new { x.TenantId, x.SchoolId, x.UserId, x.Action, x.TimestampUtc });
+        modelBuilder.Entity<AuditLog>()
+            .HasIndex(x => new { x.TenantId, x.SchoolId, x.EntityType, x.EntityId, x.TimestampUtc });
+
         modelBuilder.Entity<Payment>().Property(x => x.Amount).HasPrecision(18, 2);
         modelBuilder.Entity<StudentInvoice>().Property(x => x.TotalAmount).HasPrecision(18, 2);
         modelBuilder.Entity<StudentInvoiceLine>().Property(x => x.Amount).HasPrecision(18, 2);
         modelBuilder.Entity<FeeStructure>().Property(x => x.Amount).HasPrecision(18, 2);
     }
 }
-

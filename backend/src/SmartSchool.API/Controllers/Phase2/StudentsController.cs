@@ -1,9 +1,20 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartSchool.API.Security;
 using SmartSchool.Domain.Modules.Students;
 using SmartSchool.Persistence.Data;
+using SmartSchool.API.Services;
 
 namespace SmartSchool.API.Controllers.Phase2;
 
@@ -11,7 +22,7 @@ namespace SmartSchool.API.Controllers.Phase2;
 [Route("api/students")]
 [Authorize(Policy = PolicyNames.StudentsManage)]
 [Authorize(Policy = PolicyNames.SchoolAccess)]
-public class StudentsController(SmartSchoolDbContext dbContext) : ControllerBase
+public class StudentsController(SmartSchoolDbContext dbContext, CacheService cacheService) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<Student>>> GetAll([FromQuery] Guid tenantId, [FromQuery] Guid schoolId, [FromQuery] string? search, CancellationToken cancellationToken)
@@ -26,6 +37,14 @@ public class StudentsController(SmartSchoolDbContext dbContext) : ControllerBase
             return Forbid();
         }
 
+        // 🚀 Cache student lists for 10 minutes (default TTL)
+        var cacheKey = CacheService.CacheKeys.StudentList(tenantId, schoolId, Guid.Empty, Guid.Empty, 0, 0) + $":search:{search ?? string.Empty}";
+        var cached = await cacheService.GetAsync<IReadOnlyList<Student>>(cacheKey, cancellationToken);
+        if (cached is not null)
+        {
+            return Ok(cached);
+        }
+
         var query = dbContext.Students.AsNoTracking().Where(x => x.TenantId == tenantId && x.SchoolId == schoolId);
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -34,6 +53,8 @@ public class StudentsController(SmartSchoolDbContext dbContext) : ControllerBase
         }
 
         var items = await query.OrderBy(x => x.LastName).ThenBy(x => x.FirstName).ToListAsync(cancellationToken);
+
+        await cacheService.SetAsync(cacheKey, items, cancellationToken: cancellationToken);
         return Ok(items);
     }
 
@@ -70,12 +91,27 @@ public class StudentsController(SmartSchoolDbContext dbContext) : ControllerBase
         dbContext.Students.Add(student);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return CreatedAtAction(nameof(GetById), new { id = student.Id }, student);
+        // 🚀 Invalidate student list cache for this school
+        await cacheService.InvalidateBySchoolAsync(student.TenantId, student.SchoolId, "student", cancellationToken);
+
+        return Ok(student);
     }
 
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<Student>> GetById(Guid id, CancellationToken cancellationToken)
     {
+        // 🚀 Cache individual student profiles for 5 minutes (short TTL)
+        var cacheKey = CacheService.CacheKeys.StudentProfile(Guid.Empty, Guid.Empty, id);
+        var cached = await cacheService.GetAsync<Student>(cacheKey, cancellationToken);
+        if (cached is not null)
+        {
+            if (!User.CanAccessTenant(cached.TenantId))
+            {
+                return Forbid();
+            }
+            return Ok(cached);
+        }
+
         var item = await dbContext.Students.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (item is null)
         {
@@ -87,6 +123,7 @@ public class StudentsController(SmartSchoolDbContext dbContext) : ControllerBase
             return Forbid();
         }
 
+        await cacheService.SetAsync(cacheKey, item, cacheService._options.ShortTtl, cancellationToken);
         return Ok(item);
     }
 
@@ -104,16 +141,20 @@ public class StudentsController(SmartSchoolDbContext dbContext) : ControllerBase
             return Forbid();
         }
 
-        var studentNumber = request.StudentNumber.Trim().ToUpperInvariant();
-        var duplicate = await dbContext.Students.AnyAsync(
-            x => x.Id != id && x.TenantId == student.TenantId && x.SchoolId == student.SchoolId && x.StudentNumber == studentNumber,
-            cancellationToken);
-        if (duplicate)
+        if (!string.IsNullOrWhiteSpace(request.StudentNumber))
         {
-            return Conflict("Student number already exists in this school.");
+            var studentNumber = request.StudentNumber.Trim().ToUpperInvariant();
+            var duplicate = await dbContext.Students.AnyAsync(
+                x => x.Id != id && x.TenantId == student.TenantId && x.SchoolId == student.SchoolId && x.StudentNumber == studentNumber,
+                cancellationToken);
+            if (duplicate)
+            {
+                return Conflict("Student number already exists in this school.");
+            }
+
+            student.StudentNumber = studentNumber;
         }
 
-        student.StudentNumber = studentNumber;
         student.FirstName = request.FirstName.Trim();
         student.LastName = request.LastName.Trim();
         student.Gender = request.Gender.Trim();
@@ -163,7 +204,7 @@ public sealed record CreateStudentRequest(
     string? Status);
 
 public sealed record UpdateStudentRequest(
-    string StudentNumber,
+    string? StudentNumber,
     string FirstName,
     string LastName,
     string Gender,

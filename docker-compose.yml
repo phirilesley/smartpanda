@@ -1,0 +1,122 @@
+version: '3.8'
+
+services:
+  # SQL Server Database
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: smart-school-sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrong@Password123
+      - MSSQL_PID=Express
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+      - ./database/init:/docker-entrypoint-initdb.d
+    networks:
+      - smart-school-network
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong@Password123 -Q 'SELECT 1'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: smart-school-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - smart-school-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Backend API
+  api:
+    build:
+      context: ./backend/src/SmartSchool.API
+      dockerfile: Dockerfile
+    container_name: smart-school-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=SmartSchoolDb;User Id=sa;Password=YourStrong@Password123;TrustServerCertificate=True
+      - ConnectionStrings__Redis=redis:6379
+      - JwtSettings__SecretKey=dev-super-secret-jwt-key-for-development-only
+      - JwtSettings__Issuer=SmartSchool
+      - JwtSettings__Audience=SmartSchoolUsers
+      - JwtSettings__ExpiryMinutes=60
+    ports:
+      - "5000:80"
+      - "5001:443"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - smart-school-network
+    volumes:
+      - ./backend/src/SmartSchool.API/Logs:/app/logs
+      - ./backend/src/SmartSchool.API/Uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: smart-school-frontend
+    environment:
+      - REACT_APP_API_BASE_URL=http://localhost:5000
+      - REACT_APP_SIGNALR_URL=http://localhost:5000/hubs/notifications
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    networks:
+      - smart-school-network
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+
+  # Hangfire Dashboard (Optional - for development)
+  hangfire:
+    build:
+      context: ./backend/src/SmartSchool.API
+      dockerfile: Dockerfile
+    container_name: smart-school-hangfire
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=SmartSchoolDb;User Id=sa;Password=YourStrong@Password123;TrustServerCertificate=True
+      - ConnectionStrings__Redis=redis:6379
+    ports:
+      - "5002:80"
+    command: ["dotnet", "SmartSchool.API.dll", "--hangfire-only"]
+    depends_on:
+      - api
+    networks:
+      - smart-school-network
+
+volumes:
+  sqlserver_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  smart-school-network:
+    driver: bridge

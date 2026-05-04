@@ -1,10 +1,21 @@
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using SmartSchool.API.Data;
 using SmartSchool.API.Models;
 using System.Diagnostics;
+using SmartSchool.Persistence.Data;
 
 namespace SmartSchool.API.Controllers.Phase1
 {
@@ -12,11 +23,11 @@ namespace SmartSchool.API.Controllers.Phase1
     [Route("api/v1/health")]
     public class HealthCheckController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly SmartSchoolDbContext _context;
         private readonly ILogger<HealthCheckController> _logger;
         private readonly HealthCheckService _healthCheckService;
 
-        public HealthCheckController(AppDbContext context, ILogger<HealthCheckController> logger, HealthCheckService healthCheckService)
+        public HealthCheckController(SmartSchoolDbContext context, ILogger<HealthCheckController> logger, HealthCheckService healthCheckService)
         {
             _context = context;
             _logger = logger;

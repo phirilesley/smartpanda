@@ -1,4 +1,14 @@
-﻿using System.Security.Claims;
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -29,8 +39,17 @@ public class PaymentsController(SmartSchoolDbContext dbContext) : ControllerBase
         return Ok(items);
     }
 
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<Payment>> GetById(Guid id, CancellationToken cancellationToken)
+    {
+        var item = await dbContext.Payments.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (item is null) return NotFound();
+        if (!User.CanAccessTenant(item.TenantId)) return Forbid();
+        return Ok(item);
+    }
+
     [HttpPost]
-    public async Task<ActionResult<PaymentWithReceiptResponse>> Create([FromBody] CreatePaymentRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<object>> Create([FromBody] CreatePaymentRequest request, CancellationToken cancellationToken)
     {
         if (!User.CanAccessTenant(request.TenantId)) return Forbid();
 
@@ -88,7 +107,13 @@ public class PaymentsController(SmartSchoolDbContext dbContext) : ControllerBase
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return Ok(new PaymentWithReceiptResponse(payment, receipt, newOutstanding));
+        return Ok(new
+        {
+            id = payment.Id,
+            payment,
+            receipt,
+            outstandingBalance = newOutstanding
+        });
     }
 
     [HttpPut("{id:guid}")]

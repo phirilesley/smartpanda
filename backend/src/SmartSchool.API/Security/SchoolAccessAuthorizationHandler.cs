@@ -1,4 +1,15 @@
-﻿using System.Security.Claims;
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using SmartSchool.Persistence.Data;
@@ -10,7 +21,7 @@ public class SchoolAccessAuthorizationHandler(SmartSchoolDbContext dbContext, IH
 {
     protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, SchoolAccessRequirement requirement)
     {
-        if (context.User.IsInRole(RoleCodes.PlatformOwner) || context.User.IsInRole(RoleCodes.TenantOwner))
+        if (context.User.IsInRole(RoleCodes.PlatformOwner))
         {
             context.Succeed(requirement);
             return;

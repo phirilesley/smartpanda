@@ -1,3 +1,14 @@
+﻿using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Library;
+using SmartSchool.Domain.Modules.Transport;
+using SmartSchool.Domain.Modules.Hostels;
+using SmartSchool.Domain.Modules.Timetable;
+using SmartSchool.Domain.Modules.Students;
+using SmartSchool.Domain.Modules.HR;
+using SmartSchool.Domain.Modules.Finance;
+using SmartSchool.Domain.Modules.Academics;
+using SmartSchool.Domain.Modules.Integrations;
+using SmartSchool.API.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,7 +25,7 @@ public class ClinicController(SmartSchoolDbContext dbContext) : ControllerBase
 {
     [HttpGet("visits")]
     [Authorize(Policy = PolicyNames.ClinicView)]
-    public async Task<ActionResult<IReadOnlyList<ClinicVisit>>> GetVisits([FromQuery] Guid tenantId, [FromQuery] Guid schoolId, [FromQuery] string status, CancellationToken cancellationToken)
+    public async Task<ActionResult<IReadOnlyList<ClinicVisit>>> GetVisits([FromQuery] Guid tenantId, [FromQuery] Guid schoolId, [FromQuery] string? status, CancellationToken cancellationToken)
     {
         if (tenantId == Guid.Empty || schoolId == Guid.Empty) return BadRequest("tenantId and schoolId are required.");
         if (!User.CanAccessTenant(tenantId)) return Forbid();
@@ -473,4 +484,3 @@ public sealed record CreateClinicPrescriptionRequest(Guid TenantId, Guid SchoolI
 public sealed record PrescriptionItemRequest(Guid ClinicMedicationId, string Dosage, string Frequency, string Duration, decimal Quantity, string Instructions);
 public sealed record FulfillPrescriptionRequest(Guid TenantId, Guid SchoolId, Guid DispensedByStaffId);
 public sealed record ClinicAnalyticsResponse(int TotalVisits, int OpenVisits, int ReferredVisits, int TotalMedications, int LowStockMedications, int TotalDispenses, int TotalPrescriptions);
-
